@@ -223,6 +223,9 @@ export interface ActivityLogFilters {
   decision?: Decision;
   riskTier?: RiskTier;
   search?: string;
+  timeRange?: TimeRangePreset;
+  limit?: number;
+  offset?: number;
 }
 
 export interface HitlFilters {

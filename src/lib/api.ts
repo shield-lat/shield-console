@@ -449,47 +449,32 @@ export interface GetActivityLogParams extends AuthContext {
 
 export async function getActivityLog(
   params?: GetActivityLogParams
-): Promise<AgentAction[]> {
+): Promise<{ actions: AgentAction[]; total: number }> {
   const { companyId, accessToken, filters } = params || {};
 
-  if (USE_REAL_API && companyId && accessToken) {
-    try {
-      return await shieldApi.getActivityLog(companyId, filters, accessToken);
-    } catch (error) {
-      console.error(
-        "Failed to fetch activity log from API, falling back to mock:",
-        error
-      );
-    }
+  if (!companyId || !accessToken) {
+    console.warn("[getActivityLog] Missing companyId or accessToken");
+    return { actions: [], total: 0 };
   }
 
-  // Mock implementation
-  await mockDelay();
-  let actions = [...mockAgentActions];
-
-  if (filters?.applicationId) {
-    actions = filterByApplication(actions, filters.applicationId);
-  }
-
-  if (filters?.decision) {
-    actions = actions.filter((a) => a.decision === filters.decision);
-  }
-
-  if (filters?.riskTier) {
-    actions = actions.filter((a) => a.riskTier === filters.riskTier);
-  }
-
-  if (filters?.search) {
-    const term = filters.search.toLowerCase();
-    actions = actions.filter(
-      (a) =>
-        a.userId.toLowerCase().includes(term) ||
-        a.traceId.toLowerCase().includes(term) ||
-        a.actionType.toLowerCase().includes(term)
+  try {
+    console.log("[getActivityLog] Fetching from API with filters:", filters);
+    const result = await shieldApi.getActivityLog(
+      companyId,
+      filters,
+      accessToken
     );
+    console.log(
+      "[getActivityLog] Got",
+      result.actions.length,
+      "actions, total:",
+      result.total
+    );
+    return result;
+  } catch (error) {
+    console.error("[getActivityLog] API error:", error);
+    return { actions: [], total: 0 };
   }
-
-  return actions;
 }
 
 // ============================================================================

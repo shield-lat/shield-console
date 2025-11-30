@@ -38,10 +38,12 @@ export function ActivityClient({
       setIsLoading(true);
       try {
         const params = new URLSearchParams();
+        if (companySlug) params.set("companySlug", companySlug);
         if (applicationId) params.set("applicationId", applicationId);
         if (decision) params.set("decision", decision);
         if (riskTier) params.set("riskTier", riskTier);
         if (search) params.set("search", search);
+        params.set("limit", "100");
 
         const res = await fetch(`/api/activity?${params.toString()}`);
         if (res.ok) {
@@ -53,7 +55,7 @@ export function ActivityClient({
       }
     }
     refetch();
-  }, [applicationId, decision, riskTier, search, applications.length]);
+  }, [applicationId, decision, riskTier, search, applications.length, companySlug]);
 
   // Show empty state if no applications
   if (applications.length === 0) {

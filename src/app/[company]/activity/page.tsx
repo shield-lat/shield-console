@@ -33,15 +33,15 @@ export default async function ActivityPage({
 
   const accessToken = session.user.accessToken;
 
-  const [applications, actions] = await Promise.all([
+  const [applications, activityResult] = await Promise.all([
     getApplications({ companyId: company.id, accessToken }),
-    getActivityLog({ companyId: company.id, accessToken }),
+    getActivityLog({ companyId: company.id, accessToken, filters: { limit: 100 } }),
   ]);
 
   return (
     <ActivityClient
       applications={applications}
-      initialActions={actions}
+      initialActions={activityResult.actions}
       companySlug={companySlug}
     />
   );

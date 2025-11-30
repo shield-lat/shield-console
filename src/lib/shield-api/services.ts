@@ -526,7 +526,7 @@ export async function getActivityLog(
   companyId: string,
   filters?: ActivityLogFilters,
   token?: string
-): Promise<AgentAction[]> {
+): Promise<{ actions: AgentAction[]; total: number }> {
   const result = await listActions(
     companyId,
     {
@@ -534,9 +534,11 @@ export async function getActivityLog(
       decision: filters?.decision,
       riskTier: filters?.riskTier,
       search: filters?.search,
-      limit: 100, // Activity log typically wants more results
+      timeRange: filters?.timeRange,
+      limit: filters?.limit || 100,
+      offset: filters?.offset || 0,
     },
     token
   );
-  return result.actions;
+  return result;
 }
