@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -113,6 +114,24 @@ const navigationItems = [
 
 export function Sidebar({ companySlug }: SidebarProps) {
   const pathname = usePathname();
+  const [isCollapsed, setIsCollapsed] = useState(false);
+
+  // Load collapse state from localStorage
+  useEffect(() => {
+    const stored = localStorage.getItem("sidebar-collapsed");
+    if (stored) {
+      setIsCollapsed(stored === "true");
+    }
+  }, []);
+
+  // Save collapse state
+  const toggleCollapse = () => {
+    const newState = !isCollapsed;
+    setIsCollapsed(newState);
+    localStorage.setItem("sidebar-collapsed", String(newState));
+    // Dispatch event for layout to respond
+    window.dispatchEvent(new CustomEvent("sidebar-toggle", { detail: { collapsed: newState } }));
+  };
 
   // Generate navigation with proper hrefs
   const navigation = navigationItems.map((item) => ({
@@ -123,11 +142,17 @@ export function Sidebar({ companySlug }: SidebarProps) {
   const homeHref = companySlug ? `/${companySlug}/overview` : "/overview";
 
   return (
-    <aside className="fixed left-0 top-0 bottom-0 w-64 bg-[var(--sidebar-bg)] text-[var(--sidebar-text)] flex flex-col z-30">
+    <aside
+      className={`
+        fixed left-0 top-0 bottom-0 bg-[var(--sidebar-bg)] text-[var(--sidebar-text)] 
+        flex flex-col z-30 transition-all duration-300 ease-in-out
+        ${isCollapsed ? "w-16" : "w-64"}
+      `}
+    >
       {/* Logo */}
-      <div className="h-16 flex items-center px-6 border-b border-slate-700">
-        <Link href={homeHref} className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-teal-400 to-cyan-500 flex items-center justify-center">
+      <div className="h-16 flex items-center justify-between px-4 border-b border-slate-700">
+        <Link href={homeHref} className="flex items-center gap-3 overflow-hidden">
+          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-teal-400 to-cyan-500 flex items-center justify-center flex-shrink-0">
             <svg
               className="w-5 h-5 text-white"
               fill="none"
@@ -142,14 +167,93 @@ export function Sidebar({ companySlug }: SidebarProps) {
               />
             </svg>
           </div>
-          <span className="text-lg font-semibold text-white tracking-tight">
-            Shield Console
-          </span>
+          {!isCollapsed && (
+            <span className="text-lg font-semibold text-white tracking-tight whitespace-nowrap">
+              Shield Console
+            </span>
+          )}
+        </Link>
+        <button
+          type="button"
+          onClick={toggleCollapse}
+          className="p-1.5 rounded-lg hover:bg-[var(--sidebar-hover)] text-slate-400 hover:text-white transition-colors"
+          title={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+        >
+          <svg
+            className={`w-4 h-4 transition-transform duration-300 ${isCollapsed ? "rotate-180" : ""}`}
+            fill="none"
+            viewBox="0 0 24 24"
+            strokeWidth={2}
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M15.75 19.5L8.25 12l7.5-7.5"
+            />
+          </svg>
+        </button>
+      </div>
+
+      {/* Companies link */}
+      <div className="px-2 pt-4 pb-2">
+        <Link
+          href="/onboarding"
+          className={`
+            flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium
+            transition-colors duration-150 bg-[var(--sidebar-hover)] hover:bg-slate-700
+            ${isCollapsed ? "justify-center" : ""}
+          `}
+          title="Switch workspace"
+        >
+          <svg
+            className="w-5 h-5 flex-shrink-0"
+            fill="none"
+            viewBox="0 0 24 24"
+            strokeWidth={1.5}
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M2.25 21h19.5m-18-18v18m10.5-18v18m6-13.5V21M6.75 6.75h.75m-.75 3h.75m-.75 3h.75m3-6h.75m-.75 3h.75m-.75 3h.75M6.75 21v-3.375c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21M3 3h12m-.75 4.5H21m-3.75 3h.008v.008h-.008v-.008zm0 3h.008v.008h-.008v-.008zm0 3h.008v.008h-.008v-.008z"
+            />
+          </svg>
+          {!isCollapsed && (
+            <>
+              <span className="flex-1 truncate">
+                {companySlug
+                  ? companySlug
+                      .split("-")
+                      .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+                      .join(" ")
+                  : "Workspaces"}
+              </span>
+              <svg
+                className="w-4 h-4 text-slate-500"
+                fill="none"
+                viewBox="0 0 24 24"
+                strokeWidth={2}
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M8.25 15L12 18.75 15.75 15m-7.5-6L12 5.25 15.75 9"
+                />
+              </svg>
+            </>
+          )}
         </Link>
       </div>
 
+      {/* Divider */}
+      <div className="px-4 py-1">
+        <div className="border-t border-slate-700" />
+      </div>
+
       {/* Navigation */}
-      <nav className="flex-1 px-4 py-6 space-y-1 overflow-y-auto">
+      <nav className="flex-1 px-2 py-2 space-y-1 overflow-y-auto">
         {navigation.map((item) => {
           const isActive =
             pathname === item.href || pathname.startsWith(`${item.href}/`);
@@ -160,19 +264,24 @@ export function Sidebar({ companySlug }: SidebarProps) {
               className={`
                 flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium
                 transition-colors duration-150
+                ${isCollapsed ? "justify-center" : ""}
                 ${
                   isActive
                     ? "bg-[var(--sidebar-active)] text-white"
                     : "text-[var(--sidebar-text)] hover:bg-[var(--sidebar-hover)] hover:text-white"
                 }
               `}
+              title={isCollapsed ? item.name : undefined}
             >
-              {item.icon}
-              <span className="flex-1">{item.name}</span>
-              {item.badge && (
+              <span className="flex-shrink-0">{item.icon}</span>
+              {!isCollapsed && <span className="flex-1">{item.name}</span>}
+              {item.badge && !isCollapsed && (
                 <span className="min-w-[1.25rem] h-5 flex items-center justify-center bg-amber-500 text-white text-xs font-semibold rounded-full px-1.5">
                   {item.badge}
                 </span>
+              )}
+              {item.badge && isCollapsed && (
+                <span className="absolute top-0 right-0 w-2 h-2 bg-amber-500 rounded-full" />
               )}
             </Link>
           );
@@ -180,10 +289,17 @@ export function Sidebar({ companySlug }: SidebarProps) {
       </nav>
 
       {/* Footer */}
-      <div className="px-4 py-4 border-t border-slate-700">
-        <div className="flex items-center gap-3 px-3 py-2 rounded-lg bg-[var(--sidebar-hover)]">
-          <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
-          <span className="text-xs text-slate-400">Shield Core: Connected</span>
+      <div className="px-2 py-4 border-t border-slate-700">
+        <div
+          className={`
+            flex items-center gap-3 px-3 py-2 rounded-lg bg-[var(--sidebar-hover)]
+            ${isCollapsed ? "justify-center" : ""}
+          `}
+        >
+          <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse flex-shrink-0" />
+          {!isCollapsed && (
+            <span className="text-xs text-slate-400">Shield Core: Connected</span>
+          )}
         </div>
       </div>
     </aside>
