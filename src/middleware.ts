@@ -15,6 +15,9 @@ const authOnlyRoutes = ["/onboarding"];
 export default auth((req) => {
   const { nextUrl } = req;
   const isLoggedIn = !!req.auth;
+  const userCompanies = req.auth?.user?.companies;
+  const hasCompany = userCompanies && userCompanies.length > 0;
+  const defaultCompanySlug = hasCompany ? userCompanies[0].slug : null;
 
   const isPublicRoute = publicRoutes.some((route) =>
     nextUrl.pathname.startsWith(route)
@@ -45,11 +48,17 @@ export default auth((req) => {
 
   // Allow public routes
   if (isPublicRoute) {
-    // If logged in and on login/register, redirect to workspace selection
+    // If logged in and on login/register, redirect appropriately
     if (
       isLoggedIn &&
       (nextUrl.pathname === "/login" || nextUrl.pathname === "/register")
     ) {
+      // If user has a company, go to dashboard; otherwise, onboarding
+      if (hasCompany && defaultCompanySlug) {
+        return NextResponse.redirect(
+          new URL(`/${defaultCompanySlug}/overview`, nextUrl)
+        );
+      }
       return NextResponse.redirect(new URL("/onboarding", nextUrl));
     }
     return NextResponse.next();
@@ -73,20 +82,31 @@ export default auth((req) => {
     return NextResponse.next();
   }
 
-  // For root path, redirect to onboarding to select/create company
+  // For root path, redirect based on company status
   if (nextUrl.pathname === "/") {
+    if (hasCompany && defaultCompanySlug) {
+      return NextResponse.redirect(
+        new URL(`/${defaultCompanySlug}/overview`, nextUrl)
+      );
+    }
     return NextResponse.redirect(new URL("/onboarding", nextUrl));
   }
 
-  // For legacy dashboard routes, redirect to onboarding
+  // For legacy dashboard routes, redirect appropriately
   const legacyDashboardRoutes = [
     "/overview",
     "/applications",
     "/hitl",
     "/activity",
     "/settings",
+    "/policies",
   ];
   if (legacyDashboardRoutes.some((r) => nextUrl.pathname.startsWith(r))) {
+    if (hasCompany && defaultCompanySlug) {
+      // Preserve the path, just prepend company slug
+      const newPath = `/${defaultCompanySlug}${nextUrl.pathname}`;
+      return NextResponse.redirect(new URL(newPath, nextUrl));
+    }
     return NextResponse.redirect(new URL("/onboarding", nextUrl));
   }
 

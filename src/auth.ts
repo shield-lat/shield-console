@@ -3,10 +3,23 @@ import GitHub from "next-auth/providers/github";
 import Google from "next-auth/providers/google";
 import Credentials from "next-auth/providers/credentials";
 import type { User } from "@/lib/types";
+import type { Account } from "next-auth";
 
-// Shield Core API URL
-const SHIELD_API_URL = process.env.NEXT_PUBLIC_SHIELD_API_URL || "";
-const USE_SHIELD_API = !!SHIELD_API_URL;
+// Shield Core API URL - normalize to base URL without /v1
+function getShieldApiBaseUrl(): string {
+  const envUrl = process.env.NEXT_PUBLIC_SHIELD_API_URL || "";
+  if (!envUrl) return "";
+  // Remove trailing slash and /v1 suffix if present
+  return envUrl.replace(/\/+$/, "").replace(/\/v1$/, "");
+}
+
+const SHIELD_API_BASE = getShieldApiBaseUrl();
+const USE_SHIELD_API = !!SHIELD_API_BASE;
+
+// Log the configured URL in development
+if (process.env.NODE_ENV === "development" && USE_SHIELD_API) {
+  console.log("[Shield Auth] API Base URL:", SHIELD_API_BASE);
+}
 
 // Extend the session types
 declare module "next-auth" {
@@ -19,6 +32,7 @@ declare module "next-auth" {
       companyId: string | null;
       role: string;
       accessToken?: string; // Shield Core JWT token
+      companies?: Array<{ id: string; name: string; slug: string; role: string }>;
     };
   }
 
@@ -27,7 +41,41 @@ declare module "next-auth" {
     companyId?: string | null;
     role?: string;
     accessToken?: string;
+    companies?: Array<{ id: string; name: string; slug: string; role: string }>;
   }
+}
+
+// Response types from Shield Core API
+interface ShieldCoreUser {
+  id: string;
+  email: string;
+  name: string | null;
+  image?: string | null;
+  role: string;
+  email_verified: boolean;
+  created_at: string;
+}
+
+interface ShieldCoreCompany {
+  id: string;
+  name: string;
+  slug: string;
+  role: string;
+}
+
+interface OAuthSyncResponse {
+  user: ShieldCoreUser;
+  token: string;
+  expires_in: number;
+  is_new_user: boolean;
+  companies: ShieldCoreCompany[];
+}
+
+interface LoginResponse {
+  user: ShieldCoreUser;
+  token: string;
+  expires_in: number;
+  companies: ShieldCoreCompany[];
 }
 
 // Mock user database for development (used when SHIELD_API_URL is not set)
@@ -47,7 +95,75 @@ const mockUsers: Record<string, User & { password?: string }> = {
 };
 
 /**
- * Authenticate against Shield Core API
+ * Sync OAuth user with Shield Core API
+ * Called when a user signs in via Google or GitHub
+ */
+async function syncOAuthUserWithShieldCore(
+  provider: string,
+  providerAccountId: string,
+  email: string,
+  name: string | null,
+  image: string | null
+): Promise<{
+  id: string;
+  email: string;
+  name: string | null;
+  role: string;
+  accessToken: string;
+  companies: ShieldCoreCompany[];
+  isNewUser: boolean;
+} | null> {
+  try {
+    // Map NextAuth provider names to Shield Core provider names
+    const providerMap: Record<string, string> = {
+      google: "google",
+      github: "git_hub", // Shield Core uses git_hub (snake_case)
+    };
+
+    console.log("[Shield OAuth Sync] Calling:", `${SHIELD_API_BASE}/v1/auth/oauth/sync`);
+    const response = await fetch(`${SHIELD_API_BASE}/v1/auth/oauth/sync`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        provider: providerMap[provider] || provider,
+        provider_id: providerAccountId,
+        email,
+        name,
+        image,
+        email_verified: true, // OAuth providers verify emails
+      }),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error("[Shield OAuth Sync] Failed:", response.status, errorText);
+      return null;
+    }
+
+    const data: OAuthSyncResponse = await response.json();
+    console.log("[Shield OAuth Sync] Success:", {
+      userId: data.user.id,
+      isNewUser: data.is_new_user,
+      companiesCount: data.companies.length,
+    });
+
+    return {
+      id: data.user.id,
+      email: data.user.email,
+      name: data.user.name,
+      role: data.user.role,
+      accessToken: data.token,
+      companies: data.companies,
+      isNewUser: data.is_new_user,
+    };
+  } catch (error) {
+    console.error("[Shield OAuth Sync] Error:", error);
+    return null;
+  }
+}
+
+/**
+ * Authenticate against Shield Core API (email/password)
  */
 async function authenticateWithShieldCore(
   email: string,
@@ -58,60 +174,58 @@ async function authenticateWithShieldCore(
   name: string | null;
   role: string;
   accessToken: string;
+  companies: ShieldCoreCompany[];
 } | null> {
   try {
-    const response = await fetch(`${SHIELD_API_URL}/v1/auth/login`, {
+    const response = await fetch(`${SHIELD_API_BASE}/v1/auth/login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, password }),
     });
 
     if (!response.ok) {
-      console.error("Shield Core auth failed:", response.status);
+      console.error("[Shield Login] Failed:", response.status);
       return null;
     }
 
-    const data = await response.json();
-    
+    const data: LoginResponse = await response.json();
+
     return {
       id: data.user.id,
       email: data.user.email,
-      name: data.user.email.split("@")[0], // Derive name from email
+      name: data.user.name || email.split("@")[0],
       role: data.user.role,
       accessToken: data.token,
+      companies: data.companies,
     };
   } catch (error) {
-    console.error("Shield Core auth error:", error);
+    console.error("[Shield Login] Error:", error);
     return null;
   }
 }
 
 /**
- * Fetch user's companies from Shield Core
+ * Fetch user's companies from Shield Core (fallback)
  */
-async function fetchUserCompanies(accessToken: string): Promise<string | null> {
+async function fetchUserCompanies(
+  accessToken: string
+): Promise<ShieldCoreCompany[]> {
   try {
-    const response = await fetch(`${SHIELD_API_URL}/v1/companies`, {
+    const response = await fetch(`${SHIELD_API_BASE}/v1/companies`, {
       headers: {
         Authorization: `Bearer ${accessToken}`,
       },
     });
 
     if (!response.ok) {
-      return null;
+      return [];
     }
 
     const data = await response.json();
-    
-    // Return the first company ID if user has companies
-    if (data.companies && data.companies.length > 0) {
-      return data.companies[0].id;
-    }
-
-    return null;
+    return data.companies || [];
   } catch (error) {
-    console.error("Failed to fetch companies:", error);
-    return null;
+    console.error("[Shield] Failed to fetch companies:", error);
+    return [];
   }
 }
 
@@ -156,6 +270,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
               image: null,
               role: shieldUser.role,
               accessToken: shieldUser.accessToken,
+              companies: shieldUser.companies,
             } as any; // Extended user object
           }
         }
@@ -179,45 +294,95 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     }),
   ],
   callbacks: {
-    async jwt({ token, user }) {
+    async jwt({ token, user, account }) {
       // Initial sign in
-      if (user) {
+      if (user && account) {
         token.id = user.id;
-        
-        // Check for Shield Core token
-        const extendedUser = user as { accessToken?: string; role?: string };
-        if (extendedUser.accessToken) {
-          const accessToken = extendedUser.accessToken;
-          token.accessToken = accessToken;
-          token.role = extendedUser.role || "member";
-          
-          // Fetch companies to get companyId
-          const companyId = await fetchUserCompanies(accessToken);
-          token.companyId = companyId;
-        } else {
-          // Mock user flow
-          const existingUser = mockUsers[user.id as string];
 
-          if (existingUser) {
-            token.companyId = existingUser.companyId;
-            token.role = existingUser.role;
+        // OAuth sign in (Google, GitHub)
+        if (account.provider === "google" || account.provider === "github") {
+          if (USE_SHIELD_API) {
+            // Sync OAuth user with Shield Core
+            const shieldUser = await syncOAuthUserWithShieldCore(
+              account.provider,
+              account.providerAccountId!,
+              user.email!,
+              user.name || null,
+              user.image || null
+            );
+
+            if (shieldUser) {
+              token.id = shieldUser.id;
+              token.accessToken = shieldUser.accessToken;
+              token.role = shieldUser.role;
+              token.companies = shieldUser.companies;
+              token.companyId =
+                shieldUser.companies.length > 0
+                  ? shieldUser.companies[0].id
+                  : null;
+
+              console.log("[Shield Auth] OAuth user synced:", {
+                id: shieldUser.id,
+                hasCompany: !!token.companyId,
+                isNewUser: shieldUser.isNewUser,
+              });
+            } else {
+              // Shield Core sync failed - allow login but no Shield features
+              console.warn("[Shield Auth] OAuth sync failed, using basic session");
+              token.companyId = null;
+              token.role = "member";
+              token.companies = [];
+            }
           } else {
-            // New OAuth user - they need to complete onboarding
-            token.companyId = null;
-            token.role = "member";
+            // No Shield API - use mock flow
+            const existingUser = mockUsers[user.id as string];
+            if (existingUser) {
+              token.companyId = existingUser.companyId;
+              token.role = existingUser.role;
+            } else {
+              // New OAuth user in mock mode
+              token.companyId = null;
+              token.role = "member";
+              mockUsers[user.id as string] = {
+                id: user.id as string,
+                email: user.email as string,
+                name: user.name || null,
+                image: user.image || null,
+                emailVerified: new Date(),
+                companyId: null,
+                role: "member",
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString(),
+              };
+            }
+          }
+        }
+        // Credentials sign in
+        else if (account.provider === "credentials") {
+          const extendedUser = user as {
+            accessToken?: string;
+            role?: string;
+            companies?: ShieldCoreCompany[];
+          };
 
-            // Store the new user (in production, save to DB)
-            mockUsers[user.id as string] = {
-              id: user.id as string,
-              email: user.email as string,
-              name: user.name || null,
-              image: user.image || null,
-              emailVerified: new Date(),
-              companyId: null,
-              role: "member",
-              createdAt: new Date().toISOString(),
-              updatedAt: new Date().toISOString(),
-            };
+          if (extendedUser.accessToken) {
+            token.accessToken = extendedUser.accessToken;
+            token.role = extendedUser.role || "member";
+            token.companies = extendedUser.companies || [];
+            token.companyId =
+              extendedUser.companies && extendedUser.companies.length > 0
+                ? extendedUser.companies[0].id
+                : null;
+          } else {
+            // Mock user flow
+            const existingUser = mockUsers[user.id as string];
+            if (existingUser) {
+              token.companyId = existingUser.companyId;
+              token.role = existingUser.role;
+            } else {
+              token.companyId = null;
+              token.role = "member";
+            }
           }
         }
       }
@@ -230,6 +395,9 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         session.user.companyId = token.companyId as string | null;
         session.user.role = token.role as string;
         session.user.accessToken = token.accessToken as string | undefined;
+        session.user.companies = token.companies as
+          | Array<{ id: string; name: string; slug: string; role: string }>
+          | undefined;
       }
       return session;
     },

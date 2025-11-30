@@ -2,9 +2,15 @@ import { auth } from "@/auth";
 import { NextResponse } from "next/server";
 import type { Company, OnboardingData } from "@/lib/types";
 
-// Shield Core API URL
-const SHIELD_API_URL = process.env.NEXT_PUBLIC_SHIELD_API_URL || "";
-const USE_SHIELD_API = !!SHIELD_API_URL;
+// Shield Core API URL - normalize to base URL without /v1
+function getShieldApiBaseUrl(): string {
+  const envUrl = process.env.NEXT_PUBLIC_SHIELD_API_URL || "";
+  if (!envUrl) return "";
+  return envUrl.replace(/\/+$/, "").replace(/\/v1$/, "");
+}
+
+const SHIELD_API_BASE = getShieldApiBaseUrl();
+const USE_SHIELD_API = !!SHIELD_API_BASE;
 
 // In-memory store for demo purposes (used when SHIELD_API_URL is not set)
 const companiesStore: Map<string, Company> = new Map();
@@ -33,7 +39,7 @@ export async function GET() {
   // Use Shield Core API if available
   if (USE_SHIELD_API && session.user.accessToken) {
     try {
-      const response = await fetch(`${SHIELD_API_URL}/v1/companies`, {
+      const response = await fetch(`${SHIELD_API_BASE}/v1/companies`, {
         headers: {
           Authorization: `Bearer ${session.user.accessToken}`,
         },
@@ -90,7 +96,8 @@ export async function POST(request: Request) {
     // Use Shield Core API if available
     if (USE_SHIELD_API && session.user.accessToken) {
       try {
-        const response = await fetch(`${SHIELD_API_URL}/v1/companies`, {
+        console.log("[Shield API] Creating company:", body.companyName);
+        const response = await fetch(`${SHIELD_API_BASE}/v1/companies`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -98,7 +105,7 @@ export async function POST(request: Request) {
           },
           body: JSON.stringify({
             name: body.companyName,
-            description: body.useCase,
+            description: body.useCase || "",
           }),
         });
 

@@ -14,6 +14,9 @@ export default async function OnboardingPage() {
     redirect("/login");
   }
 
+  // Get companies from session (populated by Shield Core OAuth sync)
+  const companies = session.user.companies || [];
+
   // OnboardingForm handles both:
   // - Showing existing companies for selection
   // - Creating new companies
@@ -24,6 +27,7 @@ export default async function OnboardingPage() {
         email: session.user.email || "",
         image: session.user.image || null,
       }}
+      existingCompanies={companies}
     />
   );
 }

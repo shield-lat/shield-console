@@ -4,12 +4,20 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import type { Company } from "@/lib/types";
 
+interface SessionCompany {
+  id: string;
+  name: string;
+  slug: string;
+  role: string;
+}
+
 interface OnboardingFormProps {
   user: {
     name: string;
     email: string;
     image: string | null;
   };
+  existingCompanies?: SessionCompany[];
 }
 
 const industries = [
@@ -38,13 +46,18 @@ const useCases = [
   { value: "other", label: "Other" },
 ];
 
-export function OnboardingForm({ user }: OnboardingFormProps) {
+export function OnboardingForm({
+  user,
+  existingCompanies: initialCompanies = [],
+}: OnboardingFormProps) {
   const router = useRouter();
   const [step, setStep] = useState(0); // 0 = company list, 1-3 = creation steps
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(!initialCompanies.length);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [existingCompanies, setExistingCompanies] = useState<Company[]>([]);
+  const [companies, setCompanies] = useState<
+    Array<{ id: string; name: string; slug: string; role?: string; plan?: string }>
+  >(initialCompanies);
 
   const [formData, setFormData] = useState({
     companyName: "",
@@ -54,14 +67,20 @@ export function OnboardingForm({ user }: OnboardingFormProps) {
     useCase: "",
   });
 
-  // Fetch existing companies on load
+  // Fetch existing companies on load (only if not provided via props)
   useEffect(() => {
+    // If we already have companies from props, skip the fetch
+    if (initialCompanies.length > 0) {
+      setIsLoading(false);
+      return;
+    }
+
     async function fetchCompanies() {
       try {
         const res = await fetch("/api/companies");
         if (res.ok) {
           const data = await res.json();
-          setExistingCompanies(data.companies || []);
+          setCompanies(data.companies || []);
         }
       } catch (err) {
         console.error("Failed to fetch companies:", err);
@@ -70,7 +89,7 @@ export function OnboardingForm({ user }: OnboardingFormProps) {
       }
     }
     fetchCompanies();
-  }, []);
+  }, [initialCompanies.length]);
 
   const handleCompanyNameChange = (name: string) => {
     const slug = name
@@ -90,7 +109,7 @@ export function OnboardingForm({ user }: OnboardingFormProps) {
     setError(null);
   };
 
-  const handleSelectCompany = (company: Company) => {
+  const handleSelectCompany = (company: { slug: string }) => {
     router.push(`/${company.slug}/overview`);
   };
 
@@ -184,19 +203,19 @@ export function OnboardingForm({ user }: OnboardingFormProps) {
             Welcome back, {user.name?.split(" ")[0] || "there"}!
           </h1>
           <p className="text-[var(--foreground-muted)] mt-2">
-            {existingCompanies.length > 0
+            {companies.length > 0
               ? "Select a workspace or create a new one"
               : "Let's set up your first workspace"}
           </p>
         </div>
 
         {/* Existing companies list */}
-        {existingCompanies.length > 0 && (
+        {companies.length > 0 && (
           <div className="space-y-3 mb-6">
             <label className="block text-sm font-medium text-[var(--foreground-muted)]">
               Your workspaces
             </label>
-            {existingCompanies.map((company) => (
+            {companies.map((company) => (
               <button
                 key={company.id}
                 type="button"
@@ -217,12 +236,12 @@ export function OnboardingForm({ user }: OnboardingFormProps) {
                 <div className="flex items-center gap-2">
                   <span
                     className={`badge ${
-                      company.plan === "free"
-                        ? "badge-status-degraded"
-                        : "badge-status-healthy"
+                      company.role === "owner"
+                        ? "badge-status-healthy"
+                        : "badge-decision-hitl"
                     }`}
                   >
-                    {company.plan}
+                    {company.role || "member"}
                   </span>
                   <svg
                     className="w-5 h-5 text-[var(--foreground-muted)]"
@@ -248,7 +267,7 @@ export function OnboardingForm({ user }: OnboardingFormProps) {
           type="button"
           onClick={handleCreateNewCompany}
           className={`w-full p-4 rounded-lg border-2 border-dashed transition-colors flex items-center justify-center gap-3 ${
-            existingCompanies.length > 0
+            companies.length > 0
               ? "border-[var(--card-border)] hover:border-[var(--primary)] text-[var(--foreground-muted)] hover:text-[var(--foreground)]"
               : "border-[var(--primary)] bg-[var(--primary-light)] text-[var(--primary)]"
           }`}
@@ -267,16 +286,16 @@ export function OnboardingForm({ user }: OnboardingFormProps) {
             />
           </svg>
           <span className="font-medium">
-            {existingCompanies.length > 0
+            {companies.length > 0
               ? "Create new workspace"
               : "Create your first workspace"}
           </span>
         </button>
 
-        {existingCompanies.length > 0 && (
+        {companies.length > 0 && (
           <p className="text-center text-sm text-[var(--foreground-muted)] mt-6">
-            You're part of {existingCompanies.length} workspace
-            {existingCompanies.length > 1 ? "s" : ""}
+            You're part of {companies.length} workspace
+            {companies.length > 1 ? "s" : ""}
           </p>
         )}
       </div>
@@ -287,7 +306,7 @@ export function OnboardingForm({ user }: OnboardingFormProps) {
   return (
     <div className="w-full max-w-lg">
       {/* Back to workspace list */}
-      {existingCompanies.length > 0 && step > 0 && (
+      {companies.length > 0 && step > 0 && (
         <button
           type="button"
           onClick={() => setStep(0)}
