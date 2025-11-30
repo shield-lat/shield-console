@@ -42,6 +42,11 @@ import type {
 const API_URL = process.env.NEXT_PUBLIC_SHIELD_API_URL;
 const USE_REAL_API = !!API_URL && API_URL !== "";
 
+// Debug logging
+if (process.env.NODE_ENV === "development") {
+  console.log("[API Config] USE_REAL_API:", USE_REAL_API, "API_URL:", API_URL);
+}
+
 // Simulated network delay for mock responses (ms)
 const MOCK_DELAY = 100;
 
@@ -70,8 +75,22 @@ export async function getOverviewMetrics(
   const companyId = params?.companyId;
   const accessToken = params?.accessToken;
 
+  // Debug logging
+  console.log(
+    "[getOverviewMetrics] USE_REAL_API:",
+    USE_REAL_API,
+    "companyId:",
+    companyId,
+    "hasToken:",
+    !!accessToken
+  );
+
   if (USE_REAL_API && companyId && accessToken) {
     try {
+      console.log(
+        "[getOverviewMetrics] Calling real API for company:",
+        companyId
+      );
       return await shieldApi.getMetricsOverview(
         companyId,
         {
@@ -86,6 +105,11 @@ export async function getOverviewMetrics(
         error
       );
     }
+  } else {
+    console.log(
+      "[getOverviewMetrics] Using mock data - missing:",
+      !USE_REAL_API ? "API_URL" : !companyId ? "companyId" : "accessToken"
+    );
   }
 
   // Mock implementation
@@ -122,15 +146,32 @@ export async function getApplications(
   const companyId = params?.companyId;
   const accessToken = params?.accessToken;
 
+  console.log(
+    "[getApplications] companyId:",
+    companyId,
+    "hasToken:",
+    !!accessToken,
+    "USE_REAL_API:",
+    USE_REAL_API
+  );
+
   if (USE_REAL_API && companyId && accessToken) {
     try {
-      return await shieldApi.listApps(companyId, accessToken);
+      console.log("[getApplications] Calling real API");
+      const apps = await shieldApi.listApps(companyId, accessToken);
+      console.log("[getApplications] Got", apps.length, "apps from API");
+      return apps;
     } catch (error) {
       console.error(
         "Failed to fetch apps from API, falling back to mock:",
         error
       );
     }
+  } else {
+    console.log(
+      "[getApplications] Using mock - missing:",
+      !USE_REAL_API ? "API" : !companyId ? "companyId" : "accessToken"
+    );
   }
 
   await mockDelay();
