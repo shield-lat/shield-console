@@ -289,21 +289,28 @@ export async function getRecentActions(
 // HITL Services
 // ============================================================================
 
-export async function listHitlTasks(params?: {
-  status?: HitlStatus | null;
-  limit?: number;
-  offset?: number;
-}): Promise<{ tasks: Partial<HitlTask>[]; total: number }> {
+export async function listHitlTasks(
+  params?: {
+    status?: HitlStatus | null;
+    limit?: number;
+    offset?: number;
+  },
+  token?: string
+): Promise<{ tasks: Partial<HitlTask>[]; total: number }> {
   const response = await api.get<{
     tasks: BackendHitlTaskSummary[];
     total: number;
     limit: number;
     offset: number;
-  }>("/hitl/tasks", {
-    status: params?.status?.toLowerCase(),
-    limit: params?.limit || 20,
-    offset: params?.offset || 0,
-  });
+  }>(
+    "/hitl/tasks",
+    {
+      status: params?.status?.toLowerCase(),
+      limit: params?.limit || 20,
+      offset: params?.offset || 0,
+    },
+    token
+  );
 
   return {
     tasks: response.tasks.map((t) => ({

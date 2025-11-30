@@ -55,9 +55,16 @@ export function OnboardingForm({
   const [isLoading, setIsLoading] = useState(!initialCompanies.length);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [companies, setCompanies] = useState<
-    Array<{ id: string; name: string; slug: string; role?: string; plan?: string }>
-  >(initialCompanies);
+  const [companies, setCompanies] =
+    useState<
+      Array<{
+        id: string;
+        name: string;
+        slug: string;
+        role?: string;
+        plan?: string;
+      }>
+    >(initialCompanies);
 
   const [formData, setFormData] = useState({
     companyName: "",
@@ -141,6 +148,22 @@ export function OnboardingForm({
         setIsSubmitting(false);
         return;
       }
+
+      // Add new company to local state (so it shows if user goes back to onboarding)
+      if (data.company) {
+        setCompanies((prev) => [
+          ...prev,
+          {
+            id: data.company.id,
+            name: data.company.name,
+            slug: data.company.slug,
+            role: "owner",
+          },
+        ]);
+      }
+
+      // Small delay to ensure backend has processed, then redirect
+      await new Promise((resolve) => setTimeout(resolve, 500));
 
       // Redirect to the new company's dashboard
       router.push(data.redirectUrl || `/${formData.companySlug}/overview`);

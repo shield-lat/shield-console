@@ -26,10 +26,11 @@ import type {
   Application,
   AttackEvent,
   HitlDecisionPayload,
-  HitlFilters,
+  HitlStatus,
   HitlTask,
   OrganizationSettings,
   OverviewMetrics,
+  RiskTier,
   TimeRangePreset,
 } from "./types";
 
@@ -237,13 +238,27 @@ export async function getActionById(id: string): Promise<AgentAction | null> {
 // HITL Tasks
 // ============================================================================
 
-export async function getHitlTasks(filters?: HitlFilters): Promise<HitlTask[]> {
-  if (USE_REAL_API) {
+export interface GetHitlTasksParams extends AuthContext {
+  status?: HitlStatus;
+  applicationId?: string;
+  riskTier?: RiskTier;
+  search?: string;
+}
+
+export async function getHitlTasks(
+  params?: GetHitlTasksParams
+): Promise<HitlTask[]> {
+  const { companyId, accessToken, ...filters } = params || {};
+
+  if (USE_REAL_API && accessToken) {
     try {
-      const result = await shieldApi.listHitlTasks({
-        status: filters?.status,
-        limit: 50,
-      });
+      const result = await shieldApi.listHitlTasks(
+        {
+          status: filters?.status,
+          limit: 50,
+        },
+        accessToken
+      );
       // Note: The real API returns partial tasks, we may need to fetch details
       return result.tasks as HitlTask[];
     } catch (error) {
