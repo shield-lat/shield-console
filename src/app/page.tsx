@@ -1,5 +1,16 @@
+import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 
-export default function Home() {
+export default async function HomePage() {
+  const session = await auth();
+
+  if (!session?.user) {
+    redirect("/login");
+  }
+
+  if (!session.user.companyId) {
+    redirect("/onboarding");
+  }
+
   redirect("/overview");
 }

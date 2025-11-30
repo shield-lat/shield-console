@@ -1,13 +1,54 @@
-/**
- * Shield Console - Domain Types
- * These types map to the shield-core Rust backend models
- */
+// ============================================================================
+// Shield Console - Type Definitions
+// Domain models for the AI Safety Gateway dashboard
+// ============================================================================
 
 // ============================================================================
-// Application - Base unit of protection and measurement
+// Auth & User Types
+// ============================================================================
+
+export interface User {
+  id: string;
+  email: string;
+  name: string | null;
+  image: string | null;
+  emailVerified: Date | null;
+  companyId: string | null;
+  role: UserRole;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type UserRole = "owner" | "admin" | "member" | "viewer";
+
+export interface Company {
+  id: string;
+  name: string;
+  slug: string;
+  logo: string | null;
+  plan: CompanyPlan;
+  status: CompanyStatus;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type CompanyPlan = "free" | "starter" | "pro" | "enterprise";
+export type CompanyStatus = "active" | "suspended" | "pending";
+
+export interface OnboardingData {
+  companyName: string;
+  companySlug: string;
+  industry: string;
+  teamSize: string;
+  useCase: string;
+}
+
+// ============================================================================
+// Application Types
 // ============================================================================
 
 export type Environment = "sandbox" | "production";
+
 export type ApplicationStatus = "healthy" | "degraded" | "offline";
 
 export interface Application {
@@ -18,45 +59,38 @@ export interface Application {
   status: ApplicationStatus;
   createdAt: string;
   lastActivityAt: string;
-  // Aggregated metrics (computed server-side)
-  metrics: ApplicationMetrics;
-}
-
-export interface ApplicationMetrics {
+  // Metrics
   totalActions: number;
   blockedActions: number;
-  hitlActions: number;
+  escalatedActions: number;
   attacksDetected: number;
-  attackSuccessRate: number; // ASR = successfulAttacks / totalAttempts
+  attackSuccessRate: number;
   usersImpacted: number;
-  pendingHitlTasks: number;
 }
 
 // ============================================================================
-// AgentAction - A single action proposed by an AI agent
+// Agent Action Types
 // ============================================================================
+
+export type Decision = "Allow" | "RequireHitl" | "Block";
+
+export type RiskTier = "Low" | "Medium" | "High" | "Critical";
 
 export type ActionType =
   | "GetBalance"
   | "TransferFunds"
   | "PayBill"
   | "RequestLoan"
+  | "AddBeneficiary"
   | "UpdateProfile"
   | "ViewTransactions"
-  | "CreatePaymentLink"
-  | "RefundTransaction"
-  | "CloseAccount"
-  | "AddBeneficiary";
-
-export type Decision = "Allow" | "RequireHitl" | "Block";
-
-export type RiskTier = "Low" | "Medium" | "High" | "Critical";
+  | "CloseAccount";
 
 export interface AgentAction {
   id: string;
   traceId: string;
   applicationId: string;
-  applicationName: string; // Denormalized for display
+  applicationName: string;
   userId: string;
   actionType: ActionType;
   amount?: number;
@@ -64,14 +98,12 @@ export interface AgentAction {
   originalIntent: string;
   decision: Decision;
   riskTier: RiskTier;
-  reasons: string[]; // Rule hits, signals
+  reasons: string[];
   createdAt: string;
-  // Optional extended info
-  metadata?: Record<string, unknown>;
 }
 
 // ============================================================================
-// HitlTask - Human-In-The-Loop review task
+// HITL (Human-In-The-Loop) Types
 // ============================================================================
 
 export type HitlStatus = "Pending" | "Approved" | "Rejected";
@@ -81,7 +113,7 @@ export interface HitlTask {
   applicationId: string;
   applicationName: string;
   agentActionId: string;
-  agentAction: AgentAction; // Embedded for convenience
+  agentAction: AgentAction;
   status: HitlStatus;
   reviewerId?: string;
   reviewerName?: string;
@@ -90,94 +122,88 @@ export interface HitlTask {
   createdAt: string;
 }
 
-export interface HitlDecisionPayload {
-  decision: "Approved" | "Rejected";
-  reviewNotes?: string;
-}
-
 // ============================================================================
-// Attack Metrics
+// Attack & Security Types
 // ============================================================================
-
-export interface AttackMetrics {
-  totalAttempts: number;
-  blockedAttacks: number;
-  successfulAttacks: number;
-  attackSuccessRate: number; // ASR percentage
-}
 
 export type AttackType =
-  | "PromptInjection"
-  | "Misalignment"
-  | "DataExfiltration"
-  | "PolicyBypass"
-  | "SocialEngineering";
+  | "prompt_injection"
+  | "jailbreak_attempt"
+  | "data_exfiltration"
+  | "privilege_escalation"
+  | "misalignment"
+  | "social_engineering";
 
 export interface AttackEvent {
   id: string;
   applicationId: string;
   applicationName: string;
   attackType: AttackType;
-  decision: Decision;
-  outcome: "Blocked" | "Escalated" | "Succeeded";
+  severity: RiskTier;
+  blocked: boolean;
   userId: string;
+  description: string;
   createdAt: string;
-  details: string;
 }
 
 // ============================================================================
-// Overview / Dashboard Metrics
+// Metrics & Analytics Types
 // ============================================================================
 
 export interface OverviewMetrics {
   totalActions: number;
   blockedActions: number;
-  escalatedActions: number; // HITL
+  escalatedActions: number;
   attackAttempts: number;
   attackSuccessRate: number;
   usersImpacted: number;
-  // Time series for charts
-  actionsOverTime: TimeSeriesDataPoint[];
-  attacksByApplication: ApplicationAttackData[];
-  riskTierDistribution: RiskTierData[];
+  // Trends (percentage change from previous period)
+  trends: {
+    totalActions: number;
+    blockedActions: number;
+    escalatedActions: number;
+    attackAttempts: number;
+  };
 }
 
 export interface TimeSeriesDataPoint {
   timestamp: string;
-  allow: number;
-  requireHitl: number;
-  block: number;
+  allowed: number;
+  hitl: number;
+  blocked: number;
 }
 
 export interface ApplicationAttackData {
   applicationId: string;
   applicationName: string;
   attackCount: number;
+  successRate: number;
 }
 
-export interface RiskTierData {
-  tier: RiskTier;
-  count: number;
-  percentage: number;
+export interface RiskDistribution {
+  low: number;
+  medium: number;
+  high: number;
+  critical: number;
 }
 
 // ============================================================================
-// Filter and Query Types
+// Filter & Query Types
 // ============================================================================
-
-export interface DateRange {
-  from: string;
-  to: string;
-}
 
 export type TimeRangePreset = "24h" | "7d" | "30d" | "90d";
 
-export interface ActivityFilters {
+export interface GlobalFilters {
+  applicationId?: string;
+  timeRange: TimeRangePreset;
+  environment: Environment;
+}
+
+export interface ActivityLogFilters {
   applicationId?: string;
   decision?: Decision;
   riskTier?: RiskTier;
   search?: string;
-  timeRange?: TimeRangePreset;
 }
 
 export interface HitlFilters {
@@ -191,6 +217,12 @@ export interface HitlFilters {
 // API Response Types
 // ============================================================================
 
+export interface ApiResponse<T> {
+  data: T;
+  success: boolean;
+  error?: string;
+}
+
 export interface PaginatedResponse<T> {
   data: T[];
   total: number;
@@ -199,18 +231,33 @@ export interface PaginatedResponse<T> {
   hasMore: boolean;
 }
 
-export interface ApiError {
-  code: string;
-  message: string;
-  details?: Record<string, unknown>;
+// ============================================================================
+// Settings Types
+// ============================================================================
+
+export interface ApiKey {
+  id: string;
+  name: string;
+  prefix: string;
+  lastUsedAt?: string;
+  createdAt: string;
+  expiresAt?: string;
 }
 
-// ============================================================================
-// UI State Types
-// ============================================================================
+export interface PolicyThresholds {
+  maxAutoApproveAmount: number;
+  hitlThresholdAmount: number;
+  velocityLimitPerHour: number;
+  velocityLimitPerDay: number;
+  blockHighRiskActions: boolean;
+  requireHitlForNewBeneficiaries: boolean;
+}
 
-export interface GlobalFilters {
-  applicationId: string | null; // null = all applications
-  timeRange: TimeRangePreset;
-  environment: Environment;
+export interface OrganizationSettings {
+  id: string;
+  name: string;
+  logo?: string;
+  webhookUrl?: string;
+  notificationEmail?: string;
+  policyThresholds: PolicyThresholds;
 }

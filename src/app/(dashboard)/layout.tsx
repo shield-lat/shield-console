@@ -1,17 +1,37 @@
+import { auth } from "@/auth";
+import { redirect } from "next/navigation";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { Topbar } from "@/components/layout/Topbar";
 
-export default function DashboardLayout({
+export default async function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const session = await auth();
+
+  if (!session?.user) {
+    redirect("/login");
+  }
+
+  if (!session.user.companyId) {
+    redirect("/onboarding");
+  }
+
   return (
-    <div className="min-h-screen bg-[var(--background)]">
+    <div className="flex h-screen overflow-hidden">
       <Sidebar />
-      <div className="ml-64">
-        <Topbar />
-        <main className="p-6">{children}</main>
+      <div className="flex flex-col flex-1 overflow-hidden">
+        <Topbar
+          user={{
+            name: session.user.name,
+            email: session.user.email,
+            image: session.user.image,
+          }}
+        />
+        <main className="flex-1 overflow-y-auto p-6 bg-[var(--background)]">
+          {children}
+        </main>
       </div>
     </div>
   );
