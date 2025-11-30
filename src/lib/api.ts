@@ -1,7 +1,13 @@
 /**
  * Shield Console - API Layer
- * Data fetching functions that currently return mock data.
- * Designed to be swapped out for real shield-core endpoints.
+ * 
+ * This module provides data fetching functions for the Shield Console.
+ * It supports two modes:
+ * 
+ * 1. Real API Mode: Connects to Shield Core backend when NEXT_PUBLIC_SHIELD_API_URL is set
+ * 2. Mock Mode: Uses mock data for development/demo when no API URL is configured
+ * 
+ * The mode is automatically selected based on environment configuration.
  */
 
 import {
@@ -13,6 +19,7 @@ import {
   mockHitlTasks,
   mockOverviewMetrics,
 } from "./mockData";
+import * as shieldApi from "./shield-api";
 import type {
   ActivityLogFilters,
   AgentAction,
@@ -23,20 +30,29 @@ import type {
   HitlTask,
   OverviewMetrics,
   TimeRangePreset,
+  OrganizationSettings,
 } from "./types";
 
 // ============================================================================
 // Configuration
 // ============================================================================
 
-// Base URL for the shield-core backend (to be configured via env)
-const API_BASE_URL = process.env.NEXT_PUBLIC_SHIELD_API_URL || "/api";
+// Check if we should use the real API
+const API_URL = process.env.NEXT_PUBLIC_SHIELD_API_URL;
+const USE_REAL_API = !!API_URL && API_URL !== "";
 
 // Simulated network delay for mock responses (ms)
 const MOCK_DELAY = 100;
 
 async function mockDelay(): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, MOCK_DELAY));
+}
+
+// Get company ID from context (in a real app, this would come from session/context)
+function getCompanyId(): string {
+  // This should be replaced with actual company ID from session
+  // For now, we'll use a placeholder
+  return "00000000-0000-0000-0000-000000000001";
 }
 
 // ============================================================================
@@ -51,14 +67,21 @@ export interface GetOverviewParams {
 export async function getOverviewMetrics(
   params?: GetOverviewParams
 ): Promise<OverviewMetrics> {
+  if (USE_REAL_API) {
+    try {
+      return await shieldApi.getMetricsOverview(getCompanyId(), {
+        timeRange: params?.timeRange || "7d",
+        appId: params?.applicationId,
+      });
+    } catch (error) {
+      console.error("Failed to fetch metrics from API, falling back to mock:", error);
+    }
+  }
+
+  // Mock implementation
   await mockDelay();
-
-  // In production, this would call:
-  // GET ${API_BASE_URL}/metrics/overview?applicationId=${params.applicationId}&timeRange=${params.timeRange}
-
   const metrics = { ...mockOverviewMetrics };
 
-  // Adjust metrics if filtering by application
   if (params?.applicationId) {
     const app = getApplicationById(params.applicationId);
     if (app) {
@@ -82,16 +105,28 @@ export async function getOverviewMetrics(
 // ============================================================================
 
 export async function getApplications(): Promise<Application[]> {
-  await mockDelay();
+  if (USE_REAL_API) {
+    try {
+      return await shieldApi.listApps(getCompanyId());
+    } catch (error) {
+      console.error("Failed to fetch apps from API, falling back to mock:", error);
+    }
+  }
 
-  // In production: GET ${API_BASE_URL}/applications
+  await mockDelay();
   return mockApplications;
 }
 
 export async function getApplication(id: string): Promise<Application | null> {
-  await mockDelay();
+  if (USE_REAL_API) {
+    try {
+      return await shieldApi.getApp(getCompanyId(), id);
+    } catch (error) {
+      console.error("Failed to fetch app from API, falling back to mock:", error);
+    }
+  }
 
-  // In production: GET ${API_BASE_URL}/applications/${id}
+  await mockDelay();
   return getApplicationById(id) || null;
 }
 
@@ -110,9 +145,19 @@ export interface GetActionsParams {
 export async function getRecentActions(
   params?: GetActionsParams
 ): Promise<AgentAction[]> {
-  await mockDelay();
+  if (USE_REAL_API) {
+    try {
+      return await shieldApi.getRecentActions(getCompanyId(), {
+        appId: params?.applicationId,
+        limit: params?.limit || 15,
+      });
+    } catch (error) {
+      console.error("Failed to fetch actions from API, falling back to mock:", error);
+    }
+  }
 
-  // In production: GET ${API_BASE_URL}/actions/recent?...
+  // Mock implementation
+  await mockDelay();
   let actions = [...mockAgentActions];
 
   if (params?.applicationId) {
@@ -143,9 +188,8 @@ export async function getRecentActions(
 }
 
 export async function getActionById(id: string): Promise<AgentAction | null> {
+  // Real API doesn't have a get-by-id endpoint yet
   await mockDelay();
-
-  // In production: GET ${API_BASE_URL}/actions/${id}
   return mockAgentActions.find((a) => a.id === id) || null;
 }
 
@@ -154,9 +198,21 @@ export async function getActionById(id: string): Promise<AgentAction | null> {
 // ============================================================================
 
 export async function getHitlTasks(filters?: HitlFilters): Promise<HitlTask[]> {
-  await mockDelay();
+  if (USE_REAL_API) {
+    try {
+      const result = await shieldApi.listHitlTasks({
+        status: filters?.status,
+        limit: 50,
+      });
+      // Note: The real API returns partial tasks, we may need to fetch details
+      return result.tasks as HitlTask[];
+    } catch (error) {
+      console.error("Failed to fetch HITL tasks from API, falling back to mock:", error);
+    }
+  }
 
-  // In production: GET ${API_BASE_URL}/hitl/tasks?...
+  // Mock implementation
+  await mockDelay();
   let tasks = [...mockHitlTasks];
 
   if (filters?.applicationId) {
@@ -185,9 +241,15 @@ export async function getHitlTasks(filters?: HitlFilters): Promise<HitlTask[]> {
 }
 
 export async function getHitlTask(id: string): Promise<HitlTask | null> {
-  await mockDelay();
+  if (USE_REAL_API) {
+    try {
+      return await shieldApi.getHitlTask(id);
+    } catch (error) {
+      console.error("Failed to fetch HITL task from API, falling back to mock:", error);
+    }
+  }
 
-  // In production: GET ${API_BASE_URL}/hitl/tasks/${id}
+  await mockDelay();
   return mockHitlTasks.find((t) => t.id === id) || null;
 }
 
@@ -195,16 +257,29 @@ export async function submitHitlDecision(
   taskId: string,
   payload: HitlDecisionPayload
 ): Promise<{ success: boolean; task: HitlTask }> {
-  await mockDelay();
+  if (USE_REAL_API) {
+    try {
+      const result = await shieldApi.submitHitlDecision(
+        taskId,
+        payload,
+        "current-user" // TODO: Get from session
+      );
+      // Fetch the updated task
+      const task = await getHitlTask(taskId);
+      return { success: result.success, task: task! };
+    } catch (error) {
+      console.error("Failed to submit HITL decision, falling back to mock:", error);
+    }
+  }
 
-  // In production: POST ${API_BASE_URL}/hitl/tasks/${taskId}/decision
+  // Mock implementation
+  await mockDelay();
 
   const task = mockHitlTasks.find((t) => t.id === taskId);
   if (!task) {
     throw new Error(`Task ${taskId} not found`);
   }
 
-  // Update the task (in mock, this doesn't persist)
   const updatedTask: HitlTask = {
     ...task,
     status: payload.decision,
@@ -224,9 +299,19 @@ export async function submitHitlDecision(
 export async function getAttackEvents(
   applicationId?: string | null
 ): Promise<AttackEvent[]> {
-  await mockDelay();
+  if (USE_REAL_API) {
+    try {
+      const result = await shieldApi.listAttacks(getCompanyId(), {
+        appId: applicationId,
+        limit: 50,
+      });
+      return result.attacks;
+    } catch (error) {
+      console.error("Failed to fetch attacks from API, falling back to mock:", error);
+    }
+  }
 
-  // In production: GET ${API_BASE_URL}/attacks?applicationId=${applicationId}
+  await mockDelay();
   let events = [...mockAttackEvents];
 
   if (applicationId) {
@@ -243,10 +328,16 @@ export async function getAttackEvents(
 export async function getActivityLog(
   filters?: ActivityLogFilters
 ): Promise<AgentAction[]> {
-  await mockDelay();
+  if (USE_REAL_API) {
+    try {
+      return await shieldApi.getActivityLog(getCompanyId(), filters);
+    } catch (error) {
+      console.error("Failed to fetch activity log from API, falling back to mock:", error);
+    }
+  }
 
-  // In production: GET ${API_BASE_URL}/activity?...
-  // This returns a more comprehensive list for audit purposes
+  // Mock implementation
+  await mockDelay();
   let actions = [...mockAgentActions];
 
   if (filters?.applicationId) {
@@ -275,7 +366,51 @@ export async function getActivityLog(
 }
 
 // ============================================================================
-// Utility
+// Settings
+// ============================================================================
+
+export async function getSettings(): Promise<OrganizationSettings | null> {
+  if (USE_REAL_API) {
+    try {
+      return await shieldApi.getSettings(getCompanyId());
+    } catch (error) {
+      console.error("Failed to fetch settings from API:", error);
+    }
+  }
+
+  // Mock settings
+  return {
+    id: "org-1",
+    name: "Acme Financial",
+    policyThresholds: {
+      maxAutoApproveAmount: 10000,
+      hitlThresholdAmount: 50000,
+      velocityLimitPerHour: 100,
+      velocityLimitPerDay: 1000,
+      blockHighRiskActions: true,
+      requireHitlForNewBeneficiaries: true,
+    },
+  };
+}
+
+export async function updateSettings(
+  data: Partial<OrganizationSettings>
+): Promise<OrganizationSettings | null> {
+  if (USE_REAL_API) {
+    try {
+      return await shieldApi.updateSettings(getCompanyId(), data);
+    } catch (error) {
+      console.error("Failed to update settings:", error);
+    }
+  }
+
+  // Mock - just return the merged data
+  const current = await getSettings();
+  return { ...current!, ...data };
+}
+
+// ============================================================================
+// Utility Functions
 // ============================================================================
 
 export function formatCurrency(amount: number, currency = "USD"): string {
@@ -317,4 +452,25 @@ export function formatDateTime(dateString: string): string {
     hour: "2-digit",
     minute: "2-digit",
   });
+}
+
+// ============================================================================
+// API Status
+// ============================================================================
+
+export function isUsingRealApi(): boolean {
+  return USE_REAL_API;
+}
+
+export async function checkApiHealth(): Promise<{ status: string; version?: string } | null> {
+  if (!USE_REAL_API) {
+    return { status: "mock" };
+  }
+
+  try {
+    const health = await shieldApi.checkHealth();
+    return { status: health.status, version: health.version };
+  } catch {
+    return null;
+  }
 }

@@ -2,8 +2,11 @@ import { auth } from "@/auth";
 import { NextResponse } from "next/server";
 import type { Company, OnboardingData } from "@/lib/types";
 
-// In-memory store for demo purposes
-// In production, this would be a database
+// Shield Core API URL
+const SHIELD_API_URL = process.env.NEXT_PUBLIC_SHIELD_API_URL || "";
+const USE_SHIELD_API = !!SHIELD_API_URL;
+
+// In-memory store for demo purposes (used when SHIELD_API_URL is not set)
 const companiesStore: Map<string, Company> = new Map();
 const userCompaniesStore: Map<string, string[]> = new Map(); // userId -> companyIds
 
@@ -27,7 +30,37 @@ export async function GET() {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  // Get all companies for the current user
+  // Use Shield Core API if available
+  if (USE_SHIELD_API && session.user.accessToken) {
+    try {
+      const response = await fetch(`${SHIELD_API_URL}/v1/companies`, {
+        headers: {
+          Authorization: `Bearer ${session.user.accessToken}`,
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        // Transform backend companies to frontend format
+        const companies: Company[] = data.companies.map((c: any) => ({
+          id: c.id,
+          name: c.name,
+          slug: c.slug,
+          logo: null,
+          plan: "pro", // Default, not in backend yet
+          status: "active",
+          createdAt: c.created_at,
+          updatedAt: c.updated_at,
+        }));
+        return NextResponse.json({ companies });
+      }
+    } catch (error) {
+      console.error("Shield Core API error:", error);
+      // Fall through to mock data
+    }
+  }
+
+  // Fallback to mock data
   const companyIds = userCompaniesStore.get(session.user.id) || [];
   const companies = companyIds
     .map((id) => companiesStore.get(id))
@@ -54,6 +87,58 @@ export async function POST(request: Request) {
       );
     }
 
+    // Use Shield Core API if available
+    if (USE_SHIELD_API && session.user.accessToken) {
+      try {
+        const response = await fetch(`${SHIELD_API_URL}/v1/companies`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session.user.accessToken}`,
+          },
+          body: JSON.stringify({
+            name: body.companyName,
+            description: body.useCase,
+          }),
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          const company: Company = {
+            id: data.company.id,
+            name: data.company.name,
+            slug: data.company.slug,
+            logo: null,
+            plan: "free",
+            status: "active",
+            createdAt: data.company.created_at,
+            updatedAt: data.company.updated_at,
+          };
+
+          return NextResponse.json({
+            success: true,
+            company,
+            redirectUrl: `/${company.slug}/overview`,
+          });
+        } else if (response.status === 409) {
+          return NextResponse.json(
+            { error: "This workspace URL is already taken" },
+            { status: 409 }
+          );
+        } else {
+          const errorData = await response.json();
+          return NextResponse.json(
+            { error: errorData.message || "Failed to create company" },
+            { status: response.status }
+          );
+        }
+      } catch (error) {
+        console.error("Shield Core API error:", error);
+        // Fall through to mock implementation
+      }
+    }
+
+    // Fallback to mock implementation
     // Check if slug is already taken
     const existingCompany = Array.from(companiesStore.values()).find(
       (c) => c.slug === body.companySlug
@@ -101,4 +186,3 @@ export async function POST(request: Request) {
     );
   }
 }
-
