@@ -2,25 +2,33 @@ import { notFound, redirect } from "next/navigation";
 import { getApplication, getRecentActions, getAttackEvents } from "@/lib/api";
 import { ApplicationDetailClient } from "./ApplicationDetailClient";
 import { auth } from "@/auth";
+import { getCompanyFromSlug } from "@/lib/getCompanyFromSlug";
 
 interface Props {
   params: Promise<{ company: string; id: string }>;
 }
 
 export async function generateMetadata({ params }: Props) {
-  const { id, company } = await params;
+  const { id, company: companySlug } = await params;
   const session = await auth();
 
   if (!session?.user) {
     return { title: "Application | Shield Console" };
   }
 
-  const userCompany = session.user.companies?.find((c) => c.slug === company);
-  const companyId = userCompany?.id || session.user.companyId;
+  const company = await getCompanyFromSlug(
+    companySlug,
+    session.user.companies,
+    session.user.accessToken
+  );
+
+  if (!company) {
+    return { title: "Application | Shield Console" };
+  }
 
   const app = await getApplication({
+    companyId: company.id,
     id,
-    companyId,
     accessToken: session.user.accessToken,
   });
 
@@ -30,21 +38,30 @@ export async function generateMetadata({ params }: Props) {
 }
 
 export default async function ApplicationDetailPage({ params }: Props) {
-  const { id, company } = await params;
+  const { id, company: companySlug } = await params;
   const session = await auth();
 
   if (!session?.user) {
     redirect("/login");
   }
 
-  const userCompany = session.user.companies?.find((c) => c.slug === company);
-  const companyId = userCompany?.id || session.user.companyId;
+  // Get company from slug (checks session first, then API for new companies)
+  const company = await getCompanyFromSlug(
+    companySlug,
+    session.user.companies,
+    session.user.accessToken
+  );
+
+  if (!company) {
+    notFound();
+  }
+
   const accessToken = session.user.accessToken;
 
   const [app, actions, attacks] = await Promise.all([
-    getApplication({ id, companyId, accessToken }),
-    getRecentActions({ applicationId: id, companyId, accessToken, limit: 10 }),
-    getAttackEvents({ applicationId: id, companyId, accessToken }),
+    getApplication({ companyId: company.id, id, accessToken }),
+    getRecentActions({ companyId: company.id, applicationId: id, accessToken, limit: 10 }),
+    getAttackEvents({ companyId: company.id, applicationId: id, accessToken }),
   ]);
 
   if (!app) {

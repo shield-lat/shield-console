@@ -5,7 +5,8 @@ import {
 } from "@/lib/api";
 import { OverviewClient } from "./OverviewClient";
 import { auth } from "@/auth";
-import { redirect } from "next/navigation";
+import { redirect, notFound } from "next/navigation";
+import { getCompanyFromSlug } from "@/lib/getCompanyFromSlug";
 
 export const metadata = {
   title: "Overview | Shield Console",
@@ -17,21 +18,31 @@ export default async function OverviewPage({
 }: {
   params: Promise<{ company: string }>;
 }) {
-  const { company } = await params;
+  const { company: companySlug } = await params;
   const session = await auth();
 
   if (!session?.user) {
     redirect("/login");
   }
 
-  // Get company ID from session
-  const companyId = session.user.companyId;
+  // Get company from slug (checks session first, then API for new companies)
+  const company = await getCompanyFromSlug(
+    companySlug,
+    session.user.companies,
+    session.user.accessToken
+  );
+
+  if (!company) {
+    notFound();
+  }
+
+  const accessToken = session.user.accessToken;
 
   // Fetch initial data server-side with auth context
   const [metrics, recentActions, applications] = await Promise.all([
-    getOverviewMetrics({ companyId, accessToken: session.user.accessToken }),
-    getRecentActions({ companyId, accessToken: session.user.accessToken }),
-    getApplications({ companyId, accessToken: session.user.accessToken }),
+    getOverviewMetrics({ companyId: company.id, accessToken }),
+    getRecentActions({ companyId: company.id, accessToken }),
+    getApplications({ companyId: company.id, accessToken }),
   ]);
 
   return (
@@ -39,7 +50,7 @@ export default async function OverviewPage({
       initialMetrics={metrics}
       applications={applications}
       initialActions={recentActions}
-      companySlug={company}
+      companySlug={companySlug}
     />
   );
 }
