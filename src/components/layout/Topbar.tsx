@@ -19,9 +19,11 @@ interface TopbarProps {
     email: string | null;
     image: string | null;
   };
+  companyName?: string;
+  companySlug?: string;
 }
 
-export function Topbar({ user }: TopbarProps) {
+export function Topbar({ user, companyName, companySlug }: TopbarProps) {
   const { filters, setEnvironment, setTimeRange } = useGlobalFilters();
   const [showUserMenu, setShowUserMenu] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);

@@ -157,8 +157,12 @@ export interface OverviewMetrics {
   attackAttempts: number;
   attackSuccessRate: number;
   usersImpacted: number;
+  // Chart data
+  actionsOverTime: TimeSeriesDataPoint[];
+  attacksByApplication: ApplicationAttackData[];
+  riskTierDistribution: RiskTierDistributionItem[];
   // Trends (percentage change from previous period)
-  trends: {
+  trends?: {
     totalActions: number;
     blockedActions: number;
     escalatedActions: number;
@@ -177,7 +181,13 @@ export interface ApplicationAttackData {
   applicationId: string;
   applicationName: string;
   attackCount: number;
-  successRate: number;
+  successRate?: number;
+}
+
+export interface RiskTierDistributionItem {
+  tier: RiskTier;
+  count: number;
+  percentage: number;
 }
 
 export interface RiskDistribution {

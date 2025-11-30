@@ -3,8 +3,8 @@ import { redirect } from "next/navigation";
 import { OnboardingForm } from "./OnboardingForm";
 
 export const metadata = {
-  title: "Complete Setup | Shield Console",
-  description: "Set up your organization on Shield Console",
+  title: "Workspaces | Shield Console",
+  description: "Select or create a workspace on Shield Console",
 };
 
 export default async function OnboardingPage() {
@@ -14,11 +14,9 @@ export default async function OnboardingPage() {
     redirect("/login");
   }
 
-  // If user already has a company, redirect to dashboard
-  if (session.user.companyId) {
-    redirect("/overview");
-  }
-
+  // OnboardingForm handles both:
+  // - Showing existing companies for selection
+  // - Creating new companies
   return (
     <OnboardingForm
       user={{
@@ -29,4 +27,3 @@ export default async function OnboardingPage() {
     />
   );
 }
-
