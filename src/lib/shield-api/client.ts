@@ -1,6 +1,6 @@
 /**
  * Shield Core API Client
- * 
+ *
  * A typed client for communicating with the Shield Core backend.
  * Handles authentication, request/response transformation, and error handling.
  */
@@ -9,8 +9,27 @@
 // Configuration
 // ============================================================================
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_SHIELD_API_URL || "http://localhost:8080";
-const API_VERSION = "v1";
+// Support both formats:
+// - http://localhost:8080 (we add /v1)
+// - http://localhost:8080/v1 (already has version)
+function getApiBaseUrl(): string {
+  const envUrl =
+    process.env.NEXT_PUBLIC_SHIELD_API_URL || "http://localhost:8080";
+  // Remove trailing slash if present
+  const cleanUrl = envUrl.replace(/\/$/, "");
+  // If URL already ends with /v1, use as-is; otherwise append /v1
+  if (cleanUrl.endsWith("/v1")) {
+    return cleanUrl;
+  }
+  return `${cleanUrl}/v1`;
+}
+
+const API_BASE_URL = getApiBaseUrl();
+
+// Debug: Log API configuration (only in development)
+if (process.env.NODE_ENV === "development") {
+  console.log("[Shield API] Base URL:", API_BASE_URL);
+}
 
 // Token storage key
 const TOKEN_KEY = "shield_jwt_token";
@@ -63,11 +82,17 @@ export async function apiRequest<T>(
   endpoint: string,
   options: RequestOptions = {}
 ): Promise<T> {
-  const { method = "GET", body, params, headers = {}, skipAuth = false } = options;
+  const {
+    method = "GET",
+    body,
+    params,
+    headers = {},
+    skipAuth = false,
+  } = options;
 
   // Build URL with query params
-  let url = `${API_BASE_URL}/${API_VERSION}${endpoint}`;
-  
+  let url = `${API_BASE_URL}${endpoint}`;
+
   if (params) {
     const searchParams = new URLSearchParams();
     Object.entries(params).forEach(([key, value]) => {
@@ -105,7 +130,7 @@ export async function apiRequest<T>(
   // Handle errors
   if (!response.ok) {
     let message = `Request failed: ${response.statusText}`;
-    
+
     try {
       const errorBody = await response.json();
       message = errorBody.message || errorBody.error || message;
@@ -143,8 +168,10 @@ export async function apiRequest<T>(
 // ============================================================================
 
 export const api = {
-  get: <T>(endpoint: string, params?: Record<string, string | number | boolean | undefined | null>) =>
-    apiRequest<T>(endpoint, { method: "GET", params }),
+  get: <T>(
+    endpoint: string,
+    params?: Record<string, string | number | boolean | undefined | null>
+  ) => apiRequest<T>(endpoint, { method: "GET", params }),
 
   post: <T>(endpoint: string, body?: unknown) =>
     apiRequest<T>(endpoint, { method: "POST", body }),
@@ -170,4 +197,3 @@ export interface HealthResponse {
 export async function checkHealth(): Promise<HealthResponse> {
   return api.get<HealthResponse>("/health");
 }
-
