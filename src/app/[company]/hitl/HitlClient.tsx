@@ -3,15 +3,21 @@
 import { useEffect, useState } from "react";
 import { RiskBadge, HitlStatusBadge, Badge } from "@/components/common/Badge";
 import { HitlDetailDrawer } from "@/components/drawers/HitlDetailDrawer";
-import { getHitlTasks, formatCurrency, formatRelativeTime } from "@/lib/api";
+import { EmptyStateNoApps } from "@/components/common/EmptyStateNoApps";
+import { formatCurrency, formatRelativeTime } from "@/lib/api";
 import type { Application, HitlTask, HitlStatus, RiskTier } from "@/lib/types";
 
 interface HitlClientProps {
   applications: Application[];
   initialTasks: HitlTask[];
+  companySlug?: string;
 }
 
-export function HitlClient({ applications, initialTasks }: HitlClientProps) {
+export function HitlClient({
+  applications,
+  initialTasks,
+  companySlug = "",
+}: HitlClientProps) {
   const [tasks, setTasks] = useState(initialTasks);
   const [selectedTask, setSelectedTask] = useState<HitlTask | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -22,24 +28,27 @@ export function HitlClient({ applications, initialTasks }: HitlClientProps) {
   const [riskTier, setRiskTier] = useState<RiskTier | "">("");
   const [search, setSearch] = useState("");
 
-  // Fetch tasks when filters change
+  // Fetch tasks when filters change (only if we have apps)
   useEffect(() => {
+    if (applications.length === 0) return;
+
     async function refetch() {
       setIsLoading(true);
       try {
-        const newTasks = await getHitlTasks({
-          applicationId: applicationId || undefined,
-          status: (status as HitlStatus) || undefined,
-          riskTier: (riskTier as RiskTier) || undefined,
-          search: search || undefined,
-        });
-        setTasks(newTasks);
+        const params = new URLSearchParams();
+        if (status) params.set("status", status);
+
+        const res = await fetch(`/api/hitl?${params.toString()}`);
+        if (res.ok) {
+          const data = await res.json();
+          setTasks(data.tasks || []);
+        }
       } finally {
         setIsLoading(false);
       }
     }
     refetch();
-  }, [applicationId, status, riskTier, search]);
+  }, [applicationId, status, riskTier, search, applications.length]);
 
   const handleDecision = (taskId: string, decision: "Approved" | "Rejected") => {
     // Update local state (in reality, we'd refetch from the server)
@@ -53,6 +62,29 @@ export function HitlClient({ applications, initialTasks }: HitlClientProps) {
   };
 
   const pendingCount = tasks.filter((t) => t.status === "Pending").length;
+
+  // Show empty state if no applications
+  if (applications.length === 0) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-2xl font-bold text-[var(--foreground)]">
+            HITL Queue
+          </h1>
+          <p className="text-sm text-[var(--foreground-muted)] mt-1">
+            Review and approve actions that require human judgment
+          </p>
+        </div>
+        <div className="card">
+          <EmptyStateNoApps
+            companySlug={companySlug}
+            title="No pending reviews"
+            description="Register your first AI application to start receiving human-in-the-loop review requests."
+          />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

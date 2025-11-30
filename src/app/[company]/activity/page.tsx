@@ -38,6 +38,12 @@ export default async function ActivityPage({
     getActivityLog({ companyId: company.id, accessToken }),
   ]);
 
-  return <ActivityClient applications={applications} initialActions={actions} />;
+  return (
+    <ActivityClient
+      applications={applications}
+      initialActions={actions}
+      companySlug={companySlug}
+    />
+  );
 }
 

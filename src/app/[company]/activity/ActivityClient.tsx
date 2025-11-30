@@ -3,22 +3,20 @@
 import { useEffect, useState } from "react";
 import { DecisionBadge, RiskBadge } from "@/components/common/Badge";
 import { ActionDetailDrawer } from "@/components/drawers/ActionDetailDrawer";
+import { EmptyStateNoApps } from "@/components/common/EmptyStateNoApps";
 import { formatCurrency, formatDateTime } from "@/lib/api";
-import type {
-  AgentAction,
-  Application,
-  Decision,
-  RiskTier,
-} from "@/lib/types";
+import type { AgentAction, Application, Decision, RiskTier } from "@/lib/types";
 
 interface ActivityClientProps {
   applications: Application[];
   initialActions: AgentAction[];
+  companySlug?: string;
 }
 
 export function ActivityClient({
   applications,
   initialActions,
+  companySlug = "",
 }: ActivityClientProps) {
   const [actions, setActions] = useState(initialActions);
   const [selectedAction, setSelectedAction] = useState<AgentAction | null>(
@@ -32,8 +30,10 @@ export function ActivityClient({
   const [riskTier, setRiskTier] = useState<RiskTier | "">("");
   const [search, setSearch] = useState("");
 
-  // Fetch when filters change
+  // Fetch when filters change (only if we have apps)
   useEffect(() => {
+    if (applications.length === 0) return;
+
     async function refetch() {
       setIsLoading(true);
       try {
@@ -53,7 +53,30 @@ export function ActivityClient({
       }
     }
     refetch();
-  }, [applicationId, decision, riskTier, search]);
+  }, [applicationId, decision, riskTier, search, applications.length]);
+
+  // Show empty state if no applications
+  if (applications.length === 0) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-2xl font-bold text-[var(--foreground)]">
+            Activity Log
+          </h1>
+          <p className="text-sm text-[var(--foreground-muted)] mt-1">
+            Complete audit history of all Shield decisions
+          </p>
+        </div>
+        <div className="card">
+          <EmptyStateNoApps
+            companySlug={companySlug}
+            title="No activity yet"
+            description="Register your first AI application to start seeing activity logs and audit history."
+          />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

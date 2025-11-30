@@ -7,7 +7,10 @@
 
 // Shield Core API URL - normalize to base URL without /v1
 function getShieldApiBaseUrl(): string {
-  const envUrl = process.env.NEXT_PUBLIC_SHIELD_API_URL || "";
+  const envUrl = 
+    process.env.NEXT_PUBLIC_SHIELD_API_URL || 
+    process.env.SHIELD_API_URL ||
+    "";
   if (!envUrl) return "";
   return envUrl.replace(/\/+$/, "").replace(/\/v1$/, "");
 }
@@ -40,7 +43,10 @@ export async function getCompanyFromSlug(
   sessionCompanies: SessionCompany[] | undefined,
   accessToken: string | undefined
 ): Promise<Company | null> {
-  console.log("[getCompanyFromSlug] Looking for slug:", companySlug, "in", sessionCompanies?.length || 0, "session companies");
+  console.log("[getCompanyFromSlug] Looking for slug:", companySlug);
+  console.log("[getCompanyFromSlug] Session companies:", sessionCompanies?.length || 0);
+  console.log("[getCompanyFromSlug] Has access token:", !!accessToken);
+  console.log("[getCompanyFromSlug] SHIELD_API_BASE:", SHIELD_API_BASE || "(not set)");
   
   // First, check if company is in the session
   if (sessionCompanies && sessionCompanies.length > 0) {
@@ -53,12 +59,14 @@ export async function getCompanyFromSlug(
         slug: company.slug,
       };
     }
+    console.log("[getCompanyFromSlug] Not found in session. Available slugs:", 
+      sessionCompanies.map(c => c.slug).join(", "));
   }
 
-  // Company not in session - check API for newly created companies
+  // Company not in session - check Shield Core API
   if (SHIELD_API_BASE && accessToken) {
     try {
-      console.log("[getCompanyFromSlug] Checking API for company:", companySlug);
+      console.log("[getCompanyFromSlug] Checking Shield Core API...");
       const response = await fetch(`${SHIELD_API_BASE}/v1/companies`, {
         headers: {
           Authorization: `Bearer ${accessToken}`,
@@ -66,9 +74,12 @@ export async function getCompanyFromSlug(
         cache: "no-store",
       });
 
+      console.log("[getCompanyFromSlug] API response status:", response.status);
+
       if (response.ok) {
         const data = await response.json();
         console.log("[getCompanyFromSlug] API returned", data.companies?.length || 0, "companies");
+        
         const apiCompany = data.companies?.find(
           (c: { slug: string }) => c.slug === companySlug
         );
@@ -80,19 +91,19 @@ export async function getCompanyFromSlug(
             name: apiCompany.name,
             slug: apiCompany.slug,
           };
-        } else {
-          console.log("[getCompanyFromSlug] Company not found in API response");
         }
-      } else {
-        console.log("[getCompanyFromSlug] API response not ok:", response.status);
+        console.log("[getCompanyFromSlug] Not found in API. Available slugs:", 
+          data.companies?.map((c: {slug: string}) => c.slug).join(", "));
       }
     } catch (error) {
       console.error("[getCompanyFromSlug] API call failed:", error);
     }
   } else {
-    console.log("[getCompanyFromSlug] Cannot check API - missing:", !SHIELD_API_BASE ? "API_URL" : "accessToken");
+    console.log("[getCompanyFromSlug] Cannot check API - missing:", 
+      !SHIELD_API_BASE ? "SHIELD_API_BASE" : "accessToken");
   }
 
+  console.log("[getCompanyFromSlug] Company not found");
   return null;
 }
 

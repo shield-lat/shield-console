@@ -1,16 +1,15 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { KpiCard } from "@/components/common/KpiCard";
 import { ApplicationFilter } from "@/components/common/ApplicationFilter";
 import { AreaChart } from "@/components/charts/AreaChart";
 import { BarChart } from "@/components/charts/BarChart";
 import { RiskPieChart } from "@/components/charts/RiskPieChart";
 import { ActionsTable } from "@/components/tables/ActionsTable";
+import { EmptyStateNoApps } from "@/components/common/EmptyStateNoApps";
 import { useGlobalFilters } from "@/lib/hooks/useGlobalFilters";
 import {
-  getOverviewMetrics,
-  getRecentActions,
   formatNumber,
   formatPercentage,
 } from "@/lib/api";
@@ -34,26 +33,28 @@ export function OverviewClient({
   const [actions, setActions] = useState(initialActions);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Refetch data when filters change
-  useEffect(() => {
-    async function refetch() {
-      setIsLoading(true);
-      try {
-        const [newMetrics, newActions] = await Promise.all([
-          getOverviewMetrics({
-            applicationId: filters.applicationId,
-            timeRange: filters.timeRange,
-          }),
-          getRecentActions({ applicationId: filters.applicationId, limit: 15 }),
-        ]);
-        setMetrics(newMetrics);
-        setActions(newActions);
-      } finally {
-        setIsLoading(false);
-      }
-    }
-    refetch();
-  }, [filters.applicationId, filters.timeRange]);
+  // Show empty state if no applications
+  if (applications.length === 0) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-2xl font-bold text-[var(--foreground)]">
+            Overview
+          </h1>
+          <p className="text-sm text-[var(--foreground-muted)] mt-1">
+            Real-time view of Shield&apos;s AI safety decisions
+          </p>
+        </div>
+        <div className="card">
+          <EmptyStateNoApps
+            companySlug={companySlug}
+            title="No data yet"
+            description="Register your first AI application to start seeing real-time metrics, attack detection, and safety analytics."
+          />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

@@ -38,6 +38,11 @@ export default async function HitlPage({
     getHitlTasks({ status: "Pending", companyId: company.id, accessToken }),
   ]);
 
-  return <HitlClient applications={applications} initialTasks={tasks} />;
+  return (
+    <HitlClient
+      applications={applications}
+      initialTasks={tasks}
+      companySlug={companySlug}
+    />
+  );
 }
-
