@@ -285,3 +285,75 @@ export interface OrganizationSettings {
   notificationEmail?: string;
   policyThresholds: PolicyThresholds;
 }
+
+// ============================================================================
+// Regulatory & Compliance Types
+// ============================================================================
+
+export type ComplianceStatus =
+  | "compliant"
+  | "partial"
+  | "non_compliant"
+  | "not_applicable";
+
+export type RegulatoryCategory =
+  | "data_protection"
+  | "financial_services"
+  | "ai_governance"
+  | "consumer_protection"
+  | "cybersecurity";
+
+export interface RegulatoryFramework {
+  id: string;
+  name: string;
+  shortName: string;
+  category: RegulatoryCategory;
+  jurisdiction: string;
+  description: string;
+  status: ComplianceStatus;
+  requirements: ComplianceRequirement[];
+  lastAudit?: string;
+  nextAudit?: string;
+  certificationUrl?: string;
+}
+
+export interface ComplianceRequirement {
+  id: string;
+  name: string;
+  description: string;
+  status: ComplianceStatus;
+  controls: string[];
+  evidence?: string;
+}
+
+export interface GovernmentPolicy {
+  id: string;
+  name: string;
+  issuingBody: string;
+  jurisdiction: string;
+  effectiveDate: string;
+  category: RegulatoryCategory;
+  summary: string;
+  impactOnShield: string;
+  sourceUrl?: string;
+  status: "active" | "proposed" | "superseded";
+}
+
+export interface SafetyPolicy {
+  id: string;
+  name: string;
+  description: string;
+  category: "detection" | "prevention" | "response" | "governance";
+  severity: RiskTier;
+  enabled: boolean;
+  configuration: Record<string, unknown>;
+  lastUpdated: string;
+}
+
+export interface AiGovernancePrinciple {
+  id: string;
+  principle: string;
+  description: string;
+  implementation: string;
+  standards: string[];
+}

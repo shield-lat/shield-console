@@ -1,12 +1,12 @@
 /**
  * Shield Console - API Layer
- * 
+ *
  * This module provides data fetching functions for the Shield Console.
  * It supports two modes:
- * 
+ *
  * 1. Real API Mode: Connects to Shield Core backend when NEXT_PUBLIC_SHIELD_API_URL is set
  * 2. Mock Mode: Uses mock data for development/demo when no API URL is configured
- * 
+ *
  * The mode is automatically selected based on environment configuration.
  */
 
@@ -28,9 +28,9 @@ import type {
   HitlDecisionPayload,
   HitlFilters,
   HitlTask,
+  OrganizationSettings,
   OverviewMetrics,
   TimeRangePreset,
-  OrganizationSettings,
 } from "./types";
 
 // ============================================================================
@@ -74,7 +74,10 @@ export async function getOverviewMetrics(
         appId: params?.applicationId,
       });
     } catch (error) {
-      console.error("Failed to fetch metrics from API, falling back to mock:", error);
+      console.error(
+        "Failed to fetch metrics from API, falling back to mock:",
+        error
+      );
     }
   }
 
@@ -109,7 +112,10 @@ export async function getApplications(): Promise<Application[]> {
     try {
       return await shieldApi.listApps(getCompanyId());
     } catch (error) {
-      console.error("Failed to fetch apps from API, falling back to mock:", error);
+      console.error(
+        "Failed to fetch apps from API, falling back to mock:",
+        error
+      );
     }
   }
 
@@ -122,7 +128,10 @@ export async function getApplication(id: string): Promise<Application | null> {
     try {
       return await shieldApi.getApp(getCompanyId(), id);
     } catch (error) {
-      console.error("Failed to fetch app from API, falling back to mock:", error);
+      console.error(
+        "Failed to fetch app from API, falling back to mock:",
+        error
+      );
     }
   }
 
@@ -152,7 +161,10 @@ export async function getRecentActions(
         limit: params?.limit || 15,
       });
     } catch (error) {
-      console.error("Failed to fetch actions from API, falling back to mock:", error);
+      console.error(
+        "Failed to fetch actions from API, falling back to mock:",
+        error
+      );
     }
   }
 
@@ -207,7 +219,10 @@ export async function getHitlTasks(filters?: HitlFilters): Promise<HitlTask[]> {
       // Note: The real API returns partial tasks, we may need to fetch details
       return result.tasks as HitlTask[];
     } catch (error) {
-      console.error("Failed to fetch HITL tasks from API, falling back to mock:", error);
+      console.error(
+        "Failed to fetch HITL tasks from API, falling back to mock:",
+        error
+      );
     }
   }
 
@@ -245,7 +260,10 @@ export async function getHitlTask(id: string): Promise<HitlTask | null> {
     try {
       return await shieldApi.getHitlTask(id);
     } catch (error) {
-      console.error("Failed to fetch HITL task from API, falling back to mock:", error);
+      console.error(
+        "Failed to fetch HITL task from API, falling back to mock:",
+        error
+      );
     }
   }
 
@@ -268,7 +286,10 @@ export async function submitHitlDecision(
       const task = await getHitlTask(taskId);
       return { success: result.success, task: task! };
     } catch (error) {
-      console.error("Failed to submit HITL decision, falling back to mock:", error);
+      console.error(
+        "Failed to submit HITL decision, falling back to mock:",
+        error
+      );
     }
   }
 
@@ -307,7 +328,10 @@ export async function getAttackEvents(
       });
       return result.attacks;
     } catch (error) {
-      console.error("Failed to fetch attacks from API, falling back to mock:", error);
+      console.error(
+        "Failed to fetch attacks from API, falling back to mock:",
+        error
+      );
     }
   }
 
@@ -332,7 +356,10 @@ export async function getActivityLog(
     try {
       return await shieldApi.getActivityLog(getCompanyId(), filters);
     } catch (error) {
-      console.error("Failed to fetch activity log from API, falling back to mock:", error);
+      console.error(
+        "Failed to fetch activity log from API, falling back to mock:",
+        error
+      );
     }
   }
 
@@ -462,7 +489,10 @@ export function isUsingRealApi(): boolean {
   return USE_REAL_API;
 }
 
-export async function checkApiHealth(): Promise<{ status: string; version?: string } | null> {
+export async function checkApiHealth(): Promise<{
+  status: string;
+  version?: string;
+} | null> {
   if (!USE_REAL_API) {
     return { status: "mock" };
   }
