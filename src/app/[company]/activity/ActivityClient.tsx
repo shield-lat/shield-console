@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { DecisionBadge, RiskBadge } from "@/components/common/Badge";
 import { ActionDetailDrawer } from "@/components/drawers/ActionDetailDrawer";
-import { getActivityLog, formatCurrency, formatDateTime } from "@/lib/api";
+import { formatCurrency, formatDateTime } from "@/lib/api";
 import type {
   AgentAction,
   Application,
@@ -37,13 +37,17 @@ export function ActivityClient({
     async function refetch() {
       setIsLoading(true);
       try {
-        const newActions = await getActivityLog({
-          applicationId: applicationId || undefined,
-          decision: (decision as Decision) || undefined,
-          riskTier: (riskTier as RiskTier) || undefined,
-          search: search || undefined,
-        });
-        setActions(newActions);
+        const params = new URLSearchParams();
+        if (applicationId) params.set("applicationId", applicationId);
+        if (decision) params.set("decision", decision);
+        if (riskTier) params.set("riskTier", riskTier);
+        if (search) params.set("search", search);
+
+        const res = await fetch(`/api/activity?${params.toString()}`);
+        if (res.ok) {
+          const data = await res.json();
+          setActions(data.actions || []);
+        }
       } finally {
         setIsLoading(false);
       }
