@@ -50,6 +50,7 @@ export interface RequestOptions {
   params?: Record<string, string | number | boolean | undefined | null>;
   headers?: Record<string, string>;
   skipAuth?: boolean;
+  token?: string; // Explicit token for server-side calls
 }
 
 // ============================================================================
@@ -88,6 +89,7 @@ export async function apiRequest<T>(
     params,
     headers = {},
     skipAuth = false,
+    token: explicitToken,
   } = options;
 
   // Build URL with query params
@@ -113,8 +115,9 @@ export async function apiRequest<T>(
   };
 
   // Add auth token if available and not skipped
+  // Prefer explicit token (for server-side), fall back to localStorage
   if (!skipAuth) {
-    const token = getToken();
+    const token = explicitToken || getToken();
     if (token) {
       requestHeaders["Authorization"] = `Bearer ${token}`;
     }
@@ -170,17 +173,18 @@ export async function apiRequest<T>(
 export const api = {
   get: <T>(
     endpoint: string,
-    params?: Record<string, string | number | boolean | undefined | null>
-  ) => apiRequest<T>(endpoint, { method: "GET", params }),
+    params?: Record<string, string | number | boolean | undefined | null>,
+    token?: string
+  ) => apiRequest<T>(endpoint, { method: "GET", params, token }),
 
-  post: <T>(endpoint: string, body?: unknown) =>
-    apiRequest<T>(endpoint, { method: "POST", body }),
+  post: <T>(endpoint: string, body?: unknown, token?: string) =>
+    apiRequest<T>(endpoint, { method: "POST", body, token }),
 
-  put: <T>(endpoint: string, body?: unknown) =>
-    apiRequest<T>(endpoint, { method: "PUT", body }),
+  put: <T>(endpoint: string, body?: unknown, token?: string) =>
+    apiRequest<T>(endpoint, { method: "PUT", body, token }),
 
-  delete: <T>(endpoint: string) =>
-    apiRequest<T>(endpoint, { method: "DELETE" }),
+  delete: <T>(endpoint: string, token?: string) =>
+    apiRequest<T>(endpoint, { method: "DELETE", token }),
 };
 
 // ============================================================================

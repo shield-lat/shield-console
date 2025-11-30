@@ -4,6 +4,8 @@ import {
   getApplications,
 } from "@/lib/api";
 import { OverviewClient } from "./OverviewClient";
+import { auth } from "@/auth";
+import { redirect } from "next/navigation";
 
 export const metadata = {
   title: "Overview | Shield Console",
@@ -16,12 +18,20 @@ export default async function OverviewPage({
   params: Promise<{ company: string }>;
 }) {
   const { company } = await params;
+  const session = await auth();
 
-  // Fetch initial data server-side
+  if (!session?.user) {
+    redirect("/login");
+  }
+
+  // Get company ID from session
+  const companyId = session.user.companyId;
+
+  // Fetch initial data server-side with auth context
   const [metrics, recentActions, applications] = await Promise.all([
-    getOverviewMetrics(),
-    getRecentActions(),
-    getApplications(),
+    getOverviewMetrics({ companyId, accessToken: session.user.accessToken }),
+    getRecentActions({ companyId, accessToken: session.user.accessToken }),
+    getApplications({ companyId, accessToken: session.user.accessToken }),
   ]);
 
   return (

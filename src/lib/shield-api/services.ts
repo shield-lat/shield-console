@@ -1,42 +1,18 @@
 /**
  * Shield Core API Services
- * 
+ *
  * High-level service functions that call the API and transform responses.
  * These are the functions that should be used throughout the application.
  */
 
-import { api, setToken, clearToken, getToken } from "./client";
-import {
-  transformCompany,
-  transformApp,
-  transformAction,
-  transformHitlTaskDetails,
-  transformAttackEvent,
-  transformMetricsOverview,
-  transformTimeSeriesPoint,
-  transformRiskDistributionPoint,
-  transformSettings,
-  toBackendSettings,
-  toBackendHitlStatus,
-  type BackendCompany,
-  type BackendApp,
-  type BackendActionListItem,
-  type BackendHitlTaskDetails,
-  type BackendAttackEvent,
-  type BackendMetricsOverview,
-  type BackendTimeSeriesPoint,
-  type BackendRiskDistributionPoint,
-  type BackendCompanySettings,
-  type BackendHitlTaskSummary,
-} from "./transformers";
 import type {
+  ActivityLogFilters,
   AgentAction,
   Application,
   AttackEvent,
   Company,
   Decision,
   HitlDecisionPayload,
-  HitlFilters,
   HitlStatus,
   HitlTask,
   OrganizationSettings,
@@ -44,8 +20,30 @@ import type {
   RiskTier,
   TimeRangePreset,
   User,
-  ActivityLogFilters,
 } from "@/lib/types";
+import { api, clearToken, getToken, setToken } from "./client";
+import {
+  toBackendSettings,
+  transformAction,
+  transformApp,
+  transformAttackEvent,
+  transformCompany,
+  transformHitlTaskDetails,
+  transformMetricsOverview,
+  transformRiskDistributionPoint,
+  transformSettings,
+  transformTimeSeriesPoint,
+  type BackendActionListItem,
+  type BackendApp,
+  type BackendAttackEvent,
+  type BackendCompany,
+  type BackendCompanySettings,
+  type BackendHitlTaskDetails,
+  type BackendHitlTaskSummary,
+  type BackendMetricsOverview,
+  type BackendRiskDistributionPoint,
+  type BackendTimeSeriesPoint,
+} from "./transformers";
 
 // ============================================================================
 // Auth Services
@@ -66,7 +64,9 @@ export interface LoginResult {
   expiresIn: number;
 }
 
-export async function login(credentials: LoginCredentials): Promise<LoginResult> {
+export async function login(
+  credentials: LoginCredentials
+): Promise<LoginResult> {
   const response = await api.post<{
     token: string;
     user: { id: string; email: string; role: string };
@@ -89,7 +89,9 @@ export async function logout(): Promise<void> {
 
 export async function getCurrentUser(): Promise<User | null> {
   try {
-    const response = await api.get<{ id: string; email: string; role: string }>("/auth/me");
+    const response = await api.get<{ id: string; email: string; role: string }>(
+      "/auth/me"
+    );
     return {
       id: response.id,
       email: response.email,
@@ -120,7 +122,9 @@ export async function listCompanies(): Promise<Company[]> {
 }
 
 export async function getCompany(id: string): Promise<Company> {
-  const response = await api.get<{ company: BackendCompany }>(`/companies/${id}`);
+  const response = await api.get<{ company: BackendCompany }>(
+    `/companies/${id}`
+  );
   return transformCompany(response.company);
 }
 
@@ -128,7 +132,10 @@ export async function createCompany(data: {
   name: string;
   description?: string;
 }): Promise<Company> {
-  const response = await api.post<{ company: BackendCompany }>("/companies", data);
+  const response = await api.post<{ company: BackendCompany }>(
+    "/companies",
+    data
+  );
   return transformCompany(response.company);
 }
 
@@ -136,7 +143,10 @@ export async function updateCompany(
   id: string,
   data: { name?: string; description?: string }
 ): Promise<Company> {
-  const response = await api.put<{ company: BackendCompany }>(`/companies/${id}`, data);
+  const response = await api.put<{ company: BackendCompany }>(
+    `/companies/${id}`,
+    data
+  );
   return transformCompany(response.company);
 }
 
@@ -148,14 +158,27 @@ export async function deleteCompany(id: string): Promise<void> {
 // Application (App) Services
 // ============================================================================
 
-export async function listApps(companyId: string): Promise<Application[]> {
-  const response = await api.get<{ apps: BackendApp[] }>(`/companies/${companyId}/apps`);
+export async function listApps(
+  companyId: string,
+  token?: string
+): Promise<Application[]> {
+  const response = await api.get<{ apps: BackendApp[] }>(
+    `/companies/${companyId}/apps`,
+    undefined,
+    token
+  );
   return response.apps.map(transformApp);
 }
 
-export async function getApp(companyId: string, appId: string): Promise<Application> {
+export async function getApp(
+  companyId: string,
+  appId: string,
+  token?: string
+): Promise<Application> {
   const response = await api.get<{ app: BackendApp }>(
-    `/companies/${companyId}/apps/${appId}`
+    `/companies/${companyId}/apps/${appId}`,
+    undefined,
+    token
   );
   return transformApp(response.app);
 }
@@ -179,7 +202,12 @@ export async function createApp(
 export async function updateApp(
   companyId: string,
   appId: string,
-  data: { name?: string; description?: string; status?: string; rate_limit?: number }
+  data: {
+    name?: string;
+    description?: string;
+    status?: string;
+    rate_limit?: number;
+  }
 ): Promise<Application> {
   const response = await api.put<{ app: BackendApp }>(
     `/companies/${companyId}/apps/${appId}`,
@@ -188,7 +216,10 @@ export async function updateApp(
   return transformApp(response.app);
 }
 
-export async function deleteApp(companyId: string, appId: string): Promise<void> {
+export async function deleteApp(
+  companyId: string,
+  appId: string
+): Promise<void> {
   await api.delete(`/companies/${companyId}/apps/${appId}`);
 }
 
@@ -209,23 +240,28 @@ export interface ListActionsParams {
 
 export async function listActions(
   companyId: string,
-  params?: ListActionsParams
+  params?: ListActionsParams,
+  token?: string
 ): Promise<{ actions: AgentAction[]; total: number }> {
   const response = await api.get<{
     actions: BackendActionListItem[];
     total: number;
     limit: number;
     offset: number;
-  }>(`/companies/${companyId}/actions`, {
-    app_id: params?.appId,
-    decision: params?.decision?.toLowerCase().replace("hitl", "_hitl"),
-    risk_tier: params?.riskTier?.toLowerCase(),
-    user_id: params?.userId,
-    search: params?.search,
-    time_range: params?.timeRange,
-    limit: params?.limit || 20,
-    offset: params?.offset || 0,
-  });
+  }>(
+    `/companies/${companyId}/actions`,
+    {
+      app_id: params?.appId,
+      decision: params?.decision?.toLowerCase().replace("hitl", "_hitl"),
+      risk_tier: params?.riskTier?.toLowerCase(),
+      user_id: params?.userId,
+      search: params?.search,
+      time_range: params?.timeRange,
+      limit: params?.limit || 20,
+      offset: params?.offset || 0,
+    },
+    token
+  );
 
   return {
     actions: response.actions.map(transformAction),
@@ -235,12 +271,17 @@ export async function listActions(
 
 export async function getRecentActions(
   companyId: string,
-  params?: { appId?: string | null; limit?: number }
+  params?: { appId?: string | null; limit?: number },
+  token?: string
 ): Promise<AgentAction[]> {
-  const result = await listActions(companyId, {
-    appId: params?.appId,
-    limit: params?.limit || 15,
-  });
+  const result = await listActions(
+    companyId,
+    {
+      appId: params?.appId,
+      limit: params?.limit || 15,
+    },
+    token
+  );
   return result.actions;
 }
 
@@ -267,7 +308,12 @@ export async function listHitlTasks(params?: {
   return {
     tasks: response.tasks.map((t) => ({
       id: t.id,
-      status: t.status === "pending" ? "Pending" : t.status === "approved" ? "Approved" : "Rejected",
+      status:
+        t.status === "pending"
+          ? "Pending"
+          : t.status === "approved"
+          ? "Approved"
+          : "Rejected",
       createdAt: t.created_at,
       agentAction: {
         id: t.id,
@@ -289,7 +335,9 @@ export async function listHitlTasks(params?: {
 }
 
 export async function getHitlTask(taskId: string): Promise<HitlTask> {
-  const response = await api.get<BackendHitlTaskDetails>(`/hitl/tasks/${taskId}`);
+  const response = await api.get<BackendHitlTaskDetails>(
+    `/hitl/tasks/${taskId}`
+  );
   return transformHitlTaskDetails(response);
 }
 
@@ -327,19 +375,24 @@ export async function listAttacks(
     outcome?: string | null;
     limit?: number;
     offset?: number;
-  }
+  },
+  token?: string
 ): Promise<{ attacks: AttackEvent[]; total: number }> {
   const response = await api.get<{
     attacks: BackendAttackEvent[];
     total: number;
-  }>(`/companies/${companyId}/attacks`, {
-    app_id: params?.appId,
-    attack_type: params?.attackType,
-    severity: params?.severity?.toLowerCase(),
-    outcome: params?.outcome?.toLowerCase(),
-    limit: params?.limit || 20,
-    offset: params?.offset || 0,
-  });
+  }>(
+    `/companies/${companyId}/attacks`,
+    {
+      app_id: params?.appId,
+      attack_type: params?.attackType,
+      severity: params?.severity?.toLowerCase(),
+      outcome: params?.outcome?.toLowerCase(),
+      limit: params?.limit || 20,
+      offset: params?.offset || 0,
+    },
+    token
+  );
 
   return {
     attacks: response.attacks.map(transformAttackEvent),
@@ -353,25 +406,35 @@ export async function listAttacks(
 
 export async function getMetricsOverview(
   companyId: string,
-  params?: { timeRange?: TimeRangePreset; appId?: string | null }
+  params?: { timeRange?: TimeRangePreset; appId?: string | null },
+  token?: string
 ): Promise<OverviewMetrics> {
   // Fetch all metrics in parallel
   const [overviewRes, timeSeriesRes, riskDistRes] = await Promise.all([
-    api.get<BackendMetricsOverview>(`/companies/${companyId}/metrics/overview`, {
-      time_range: params?.timeRange || "7d",
-      app_id: params?.appId,
-    }),
-    api.get<{ data: BackendTimeSeriesPoint[] }>(`/companies/${companyId}/metrics/time-series`, {
-      time_range: params?.timeRange || "7d",
-      app_id: params?.appId,
-      granularity: params?.timeRange === "24h" ? "hour" : "day",
-    }),
+    api.get<BackendMetricsOverview>(
+      `/companies/${companyId}/metrics/overview`,
+      {
+        time_range: params?.timeRange || "7d",
+        app_id: params?.appId,
+      },
+      token
+    ),
+    api.get<{ data: BackendTimeSeriesPoint[] }>(
+      `/companies/${companyId}/metrics/time-series`,
+      {
+        time_range: params?.timeRange || "7d",
+        app_id: params?.appId,
+        granularity: params?.timeRange === "24h" ? "hour" : "day",
+      },
+      token
+    ),
     api.get<{ data: BackendRiskDistributionPoint[] }>(
       `/companies/${companyId}/metrics/risk-distribution`,
       {
         time_range: params?.timeRange || "7d",
         app_id: params?.appId,
-      }
+      },
+      token
     ),
   ]);
 
@@ -389,7 +452,9 @@ export async function getTimeSeries(
     appId?: string | null;
     granularity?: "hour" | "day";
   }
-): Promise<{ timestamp: string; allowed: number; hitl: number; blocked: number }[]> {
+): Promise<
+  { timestamp: string; allowed: number; hitl: number; blocked: number }[]
+> {
   const response = await api.get<{ data: BackendTimeSeriesPoint[] }>(
     `/companies/${companyId}/metrics/time-series`,
     {
@@ -421,18 +486,27 @@ export async function getRiskDistribution(
 // Settings Services
 // ============================================================================
 
-export async function getSettings(companyId: string): Promise<OrganizationSettings> {
-  const response = await api.get<BackendCompanySettings>(`/companies/${companyId}/settings`);
+export async function getSettings(
+  companyId: string,
+  token?: string
+): Promise<OrganizationSettings> {
+  const response = await api.get<BackendCompanySettings>(
+    `/companies/${companyId}/settings`,
+    undefined,
+    token
+  );
   return transformSettings(response);
 }
 
 export async function updateSettings(
   companyId: string,
-  data: Partial<OrganizationSettings>
+  data: Partial<OrganizationSettings>,
+  token?: string
 ): Promise<OrganizationSettings> {
   const response = await api.put<BackendCompanySettings>(
     `/companies/${companyId}/settings`,
-    toBackendSettings(data)
+    toBackendSettings(data),
+    token
   );
   return transformSettings(response);
 }
@@ -443,15 +517,19 @@ export async function updateSettings(
 
 export async function getActivityLog(
   companyId: string,
-  filters?: ActivityLogFilters
+  filters?: ActivityLogFilters,
+  token?: string
 ): Promise<AgentAction[]> {
-  const result = await listActions(companyId, {
-    appId: filters?.applicationId,
-    decision: filters?.decision,
-    riskTier: filters?.riskTier,
-    search: filters?.search,
-    limit: 100, // Activity log typically wants more results
-  });
+  const result = await listActions(
+    companyId,
+    {
+      appId: filters?.applicationId,
+      decision: filters?.decision,
+      riskTier: filters?.riskTier,
+      search: filters?.search,
+      limit: 100, // Activity log typically wants more results
+    },
+    token
+  );
   return result.actions;
 }
-

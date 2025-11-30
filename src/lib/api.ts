@@ -48,18 +48,17 @@ async function mockDelay(): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, MOCK_DELAY));
 }
 
-// Get company ID from context (in a real app, this would come from session/context)
-function getCompanyId(): string {
-  // This should be replaced with actual company ID from session
-  // For now, we'll use a placeholder
-  return "00000000-0000-0000-0000-000000000001";
+// Auth context for server-side API calls
+export interface AuthContext {
+  companyId?: string | null;
+  accessToken?: string;
 }
 
 // ============================================================================
 // Overview / Dashboard
 // ============================================================================
 
-export interface GetOverviewParams {
+export interface GetOverviewParams extends AuthContext {
   applicationId?: string | null;
   timeRange?: TimeRangePreset;
 }
@@ -67,12 +66,19 @@ export interface GetOverviewParams {
 export async function getOverviewMetrics(
   params?: GetOverviewParams
 ): Promise<OverviewMetrics> {
-  if (USE_REAL_API) {
+  const companyId = params?.companyId;
+  const accessToken = params?.accessToken;
+
+  if (USE_REAL_API && companyId && accessToken) {
     try {
-      return await shieldApi.getMetricsOverview(getCompanyId(), {
-        timeRange: params?.timeRange || "7d",
-        appId: params?.applicationId,
-      });
+      return await shieldApi.getMetricsOverview(
+        companyId,
+        {
+          timeRange: params?.timeRange || "7d",
+          appId: params?.applicationId,
+        },
+        accessToken
+      );
     } catch (error) {
       console.error(
         "Failed to fetch metrics from API, falling back to mock:",
@@ -107,10 +113,17 @@ export async function getOverviewMetrics(
 // Applications
 // ============================================================================
 
-export async function getApplications(): Promise<Application[]> {
-  if (USE_REAL_API) {
+export interface GetApplicationsParams extends AuthContext {}
+
+export async function getApplications(
+  params?: GetApplicationsParams
+): Promise<Application[]> {
+  const companyId = params?.companyId;
+  const accessToken = params?.accessToken;
+
+  if (USE_REAL_API && companyId && accessToken) {
     try {
-      return await shieldApi.listApps(getCompanyId());
+      return await shieldApi.listApps(companyId, accessToken);
     } catch (error) {
       console.error(
         "Failed to fetch apps from API, falling back to mock:",
@@ -123,10 +136,18 @@ export async function getApplications(): Promise<Application[]> {
   return mockApplications;
 }
 
-export async function getApplication(id: string): Promise<Application | null> {
-  if (USE_REAL_API) {
+export interface GetApplicationParams extends AuthContext {
+  id: string;
+}
+
+export async function getApplication(
+  params: GetApplicationParams
+): Promise<Application | null> {
+  const { id, companyId, accessToken } = params;
+
+  if (USE_REAL_API && companyId && accessToken) {
     try {
-      return await shieldApi.getApp(getCompanyId(), id);
+      return await shieldApi.getApp(companyId, id, accessToken);
     } catch (error) {
       console.error(
         "Failed to fetch app from API, falling back to mock:",
@@ -143,7 +164,7 @@ export async function getApplication(id: string): Promise<Application | null> {
 // Agent Actions
 // ============================================================================
 
-export interface GetActionsParams {
+export interface GetActionsParams extends AuthContext {
   applicationId?: string | null;
   decision?: string;
   riskTier?: string;
@@ -154,12 +175,19 @@ export interface GetActionsParams {
 export async function getRecentActions(
   params?: GetActionsParams
 ): Promise<AgentAction[]> {
-  if (USE_REAL_API) {
+  const companyId = params?.companyId;
+  const accessToken = params?.accessToken;
+
+  if (USE_REAL_API && companyId && accessToken) {
     try {
-      return await shieldApi.getRecentActions(getCompanyId(), {
-        appId: params?.applicationId,
-        limit: params?.limit || 15,
-      });
+      return await shieldApi.getRecentActions(
+        companyId,
+        {
+          appId: params?.applicationId,
+          limit: params?.limit || 15,
+        },
+        accessToken
+      );
     } catch (error) {
       console.error(
         "Failed to fetch actions from API, falling back to mock:",
@@ -317,15 +345,25 @@ export async function submitHitlDecision(
 // Attack Events
 // ============================================================================
 
+export interface GetAttackEventsParams extends AuthContext {
+  applicationId?: string | null;
+}
+
 export async function getAttackEvents(
-  applicationId?: string | null
+  params?: GetAttackEventsParams
 ): Promise<AttackEvent[]> {
-  if (USE_REAL_API) {
+  const { companyId, accessToken, applicationId } = params || {};
+
+  if (USE_REAL_API && companyId && accessToken) {
     try {
-      const result = await shieldApi.listAttacks(getCompanyId(), {
-        appId: applicationId,
-        limit: 50,
-      });
+      const result = await shieldApi.listAttacks(
+        companyId,
+        {
+          appId: applicationId,
+          limit: 50,
+        },
+        accessToken
+      );
       return result.attacks;
     } catch (error) {
       console.error(
@@ -349,12 +387,18 @@ export async function getAttackEvents(
 // Activity Log (for auditors)
 // ============================================================================
 
+export interface GetActivityLogParams extends AuthContext {
+  filters?: ActivityLogFilters;
+}
+
 export async function getActivityLog(
-  filters?: ActivityLogFilters
+  params?: GetActivityLogParams
 ): Promise<AgentAction[]> {
-  if (USE_REAL_API) {
+  const { companyId, accessToken, filters } = params || {};
+
+  if (USE_REAL_API && companyId && accessToken) {
     try {
-      return await shieldApi.getActivityLog(getCompanyId(), filters);
+      return await shieldApi.getActivityLog(companyId, filters, accessToken);
     } catch (error) {
       console.error(
         "Failed to fetch activity log from API, falling back to mock:",
@@ -396,10 +440,16 @@ export async function getActivityLog(
 // Settings
 // ============================================================================
 
-export async function getSettings(): Promise<OrganizationSettings | null> {
-  if (USE_REAL_API) {
+export interface GetSettingsParams extends AuthContext {}
+
+export async function getSettings(
+  params?: GetSettingsParams
+): Promise<OrganizationSettings | null> {
+  const { companyId, accessToken } = params || {};
+
+  if (USE_REAL_API && companyId && accessToken) {
     try {
-      return await shieldApi.getSettings(getCompanyId());
+      return await shieldApi.getSettings(companyId, accessToken);
     } catch (error) {
       console.error("Failed to fetch settings from API:", error);
     }
@@ -420,12 +470,18 @@ export async function getSettings(): Promise<OrganizationSettings | null> {
   };
 }
 
+export interface UpdateSettingsParams extends AuthContext {
+  data: Partial<OrganizationSettings>;
+}
+
 export async function updateSettings(
-  data: Partial<OrganizationSettings>
+  params: UpdateSettingsParams
 ): Promise<OrganizationSettings | null> {
-  if (USE_REAL_API) {
+  const { companyId, accessToken, data } = params;
+
+  if (USE_REAL_API && companyId && accessToken) {
     try {
-      return await shieldApi.updateSettings(getCompanyId(), data);
+      return await shieldApi.updateSettings(companyId, data, accessToken);
     } catch (error) {
       console.error("Failed to update settings:", error);
     }
