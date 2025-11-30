@@ -14,7 +14,7 @@ import {
   mockOverviewMetrics,
 } from "./mockData";
 import type {
-  ActivityFilters,
+  ActivityLogFilters,
   AgentAction,
   Application,
   AttackEvent,
@@ -241,7 +241,7 @@ export async function getAttackEvents(
 // ============================================================================
 
 export async function getActivityLog(
-  filters?: ActivityFilters
+  filters?: ActivityLogFilters
 ): Promise<AgentAction[]> {
   await mockDelay();
 

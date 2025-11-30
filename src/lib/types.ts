@@ -51,6 +51,16 @@ export type Environment = "sandbox" | "production";
 
 export type ApplicationStatus = "healthy" | "degraded" | "offline";
 
+export interface ApplicationMetrics {
+  totalActions: number;
+  blockedActions: number;
+  hitlActions: number;
+  attacksDetected: number;
+  attackSuccessRate: number;
+  usersImpacted: number;
+  pendingHitlTasks?: number;
+}
+
 export interface Application {
   id: string;
   name: string;
@@ -59,13 +69,7 @@ export interface Application {
   status: ApplicationStatus;
   createdAt: string;
   lastActivityAt: string;
-  // Metrics
-  totalActions: number;
-  blockedActions: number;
-  escalatedActions: number;
-  attacksDetected: number;
-  attackSuccessRate: number;
-  usersImpacted: number;
+  metrics: ApplicationMetrics;
 }
 
 // ============================================================================
@@ -84,7 +88,8 @@ export type ActionType =
   | "AddBeneficiary"
   | "UpdateProfile"
   | "ViewTransactions"
-  | "CloseAccount";
+  | "CloseAccount"
+  | "RefundTransaction";
 
 export interface AgentAction {
   id: string;
@@ -134,6 +139,8 @@ export type AttackType =
   | "misalignment"
   | "social_engineering";
 
+export type AttackOutcome = "Blocked" | "Escalated" | "Allowed";
+
 export interface AttackEvent {
   id: string;
   applicationId: string;
@@ -141,8 +148,10 @@ export interface AttackEvent {
   attackType: AttackType;
   severity: RiskTier;
   blocked: boolean;
+  outcome: AttackOutcome;
   userId: string;
   description: string;
+  details?: string;
   createdAt: string;
 }
 
@@ -204,7 +213,7 @@ export interface RiskDistribution {
 export type TimeRangePreset = "24h" | "7d" | "30d" | "90d";
 
 export interface GlobalFilters {
-  applicationId?: string;
+  applicationId: string | null;
   timeRange: TimeRangePreset;
   environment: Environment;
 }
@@ -221,6 +230,11 @@ export interface HitlFilters {
   status?: HitlStatus;
   riskTier?: RiskTier;
   search?: string;
+}
+
+export interface HitlDecisionPayload {
+  decision: "Approved" | "Rejected";
+  reviewNotes?: string;
 }
 
 // ============================================================================

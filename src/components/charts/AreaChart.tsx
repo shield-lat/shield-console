@@ -12,21 +12,21 @@ export function AreaChart({ data, height = 200 }: AreaChartProps) {
   const chartData = useMemo(() => {
     if (!data.length) return null;
 
-    const maxValue = Math.max(...data.map((d) => d.allow + d.requireHitl + d.block));
+    const maxValue = Math.max(...data.map((d) => d.allowed + d.hitl + d.blocked));
     const width = 100;
     const padding = 0;
 
     const points = data.map((d, i) => {
       const x = padding + (i / (data.length - 1)) * (width - padding * 2);
-      const total = d.allow + d.requireHitl + d.block;
+      const total = d.allowed + d.hitl + d.blocked;
       return {
         x,
         total,
-        allow: d.allow,
-        requireHitl: d.requireHitl,
-        block: d.block,
-        yAllow: 100 - (d.allow / maxValue) * 100,
-        yHitl: 100 - ((d.allow + d.requireHitl) / maxValue) * 100,
+        allowed: d.allowed,
+        hitl: d.hitl,
+        blocked: d.blocked,
+        yAllow: 100 - (d.allowed / maxValue) * 100,
+        yHitl: 100 - ((d.allowed + d.hitl) / maxValue) * 100,
         yBlock: 100 - (total / maxValue) * 100,
       };
     });

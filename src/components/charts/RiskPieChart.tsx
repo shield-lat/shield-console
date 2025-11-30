@@ -1,9 +1,9 @@
 "use client";
 
-import type { RiskTierData } from "@/lib/types";
+import type { RiskTierDistributionItem } from "@/lib/types";
 
 interface RiskPieChartProps {
-  data: RiskTierData[];
+  data: RiskTierDistributionItem[];
   size?: number;
 }
 

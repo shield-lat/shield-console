@@ -85,7 +85,7 @@ export function ApplicationsClient({ applications }: ApplicationsClientProps) {
             </div>
 
             {/* Pending HITL indicator */}
-            {app.metrics.pendingHitlTasks > 0 && (
+            {app.metrics.pendingHitlTasks && app.metrics.pendingHitlTasks > 0 && (
               <div className="mt-4 pt-4 border-t border-[var(--card-border)]">
                 <Badge variant="warning">
                   {app.metrics.pendingHitlTasks} pending HITL tasks
