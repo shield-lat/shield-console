@@ -269,7 +269,7 @@ export function OverviewClient({
                   )}
                 </span>
               </div>
-              <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
+              <div className="h-2 bg-[var(--background-alt)] rounded-full overflow-hidden">
                 <div
                   className="h-full bg-[var(--chart-1)] rounded-full"
                   style={{
@@ -294,7 +294,7 @@ export function OverviewClient({
                   )}
                 </span>
               </div>
-              <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
+              <div className="h-2 bg-[var(--background-alt)] rounded-full overflow-hidden">
                 <div
                   className="h-full bg-[var(--chart-3)] rounded-full"
                   style={{
@@ -316,7 +316,7 @@ export function OverviewClient({
                   )}
                 </span>
               </div>
-              <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
+              <div className="h-2 bg-[var(--background-alt)] rounded-full overflow-hidden">
                 <div
                   className="h-full bg-[var(--chart-2)] rounded-full"
                   style={{
@@ -336,9 +336,9 @@ export function OverviewClient({
                   {formatPercentage(100 - metrics.attackSuccessRate)}
                 </span>
               </div>
-              <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
+              <div className="h-2 bg-[var(--background-alt)] rounded-full overflow-hidden">
                 <div
-                  className="h-full bg-green-500 rounded-full"
+                  className="h-full bg-[var(--status-healthy)] rounded-full"
                   style={{ width: `${100 - metrics.attackSuccessRate}%` }}
                 />
               </div>
