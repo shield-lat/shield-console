@@ -1,4 +1,9 @@
-import type { Decision, RiskTier, ApplicationStatus, HitlStatus } from "@/lib/types";
+import type {
+  Decision,
+  RiskTier,
+  ApplicationStatus,
+  HitlStatus,
+} from "@/lib/types";
 
 interface BadgeProps {
   children: React.ReactNode;
@@ -9,11 +14,11 @@ interface BadgeProps {
 
 const variantStyles = {
   default: "bg-[var(--primary-light)] text-[var(--primary)]",
-  success: "bg-[var(--decision-allow-bg)] text-green-700",
-  warning: "bg-[var(--decision-hitl-bg)] text-amber-700",
-  danger: "bg-[var(--decision-block-bg)] text-red-700",
+  success: "bg-[var(--decision-allow-bg)] text-[var(--decision-allow-text)]",
+  warning: "bg-[var(--decision-hitl-bg)] text-[var(--decision-hitl-text)]",
+  danger: "bg-[var(--decision-block-bg)] text-[var(--decision-block-text)]",
   info: "bg-[var(--secondary-light)] text-[var(--secondary)]",
-  neutral: "bg-slate-100 text-slate-600",
+  neutral: "bg-[var(--background-alt)] text-[var(--foreground-muted)]",
 };
 
 const sizeStyles = {
@@ -21,7 +26,12 @@ const sizeStyles = {
   md: "text-sm px-2.5 py-1",
 };
 
-export function Badge({ children, variant = "default", size = "sm", className = "" }: BadgeProps) {
+export function Badge({
+  children,
+  variant = "default",
+  size = "sm",
+  className = "",
+}: BadgeProps) {
   return (
     <span
       className={`inline-flex items-center font-medium rounded-full ${variantStyles[variant]} ${sizeStyles[size]} ${className}`}
@@ -34,13 +44,6 @@ export function Badge({ children, variant = "default", size = "sm", className = 
 // Specialized badge components for domain types
 
 export function RiskBadge({ tier }: { tier: RiskTier }) {
-  const variants: Record<RiskTier, "success" | "warning" | "danger"> = {
-    Low: "success",
-    Medium: "warning",
-    High: "danger",
-    Critical: "danger",
-  };
-
   const styles: Record<RiskTier, string> = {
     Low: "badge-risk-low",
     Medium: "badge-risk-medium",
@@ -80,37 +83,38 @@ export function StatusBadge({ status }: { status: ApplicationStatus }) {
     offline: "Offline",
   };
 
+  const dotColors: Record<ApplicationStatus, string> = {
+    healthy: "bg-[var(--status-healthy)]",
+    degraded: "bg-[var(--status-degraded)]",
+    offline: "bg-[var(--status-offline)]",
+  };
+
   return (
     <span className={`badge ${styles[status]} flex items-center gap-1.5`}>
-      <span
-        className={`w-1.5 h-1.5 rounded-full ${
-          status === "healthy"
-            ? "bg-green-500"
-            : status === "degraded"
-              ? "bg-yellow-500"
-              : "bg-gray-400"
-        }`}
-      />
+      <span className={`w-1.5 h-1.5 rounded-full ${dotColors[status]}`} />
       {labels[status]}
     </span>
   );
 }
 
 export function HitlStatusBadge({ status }: { status: HitlStatus }) {
-  const variants: Record<HitlStatus, "warning" | "success" | "danger"> = {
-    Pending: "warning",
-    Approved: "success",
-    Rejected: "danger",
+  const styles: Record<HitlStatus, string> = {
+    Pending: "badge-decision-hitl",
+    Approved: "badge-decision-allow",
+    Rejected: "badge-decision-block",
   };
 
-  return <Badge variant={variants[status]}>{status}</Badge>;
+  return <span className={`badge ${styles[status]}`}>{status}</span>;
 }
 
-export function EnvironmentBadge({ environment }: { environment: "sandbox" | "production" }) {
+export function EnvironmentBadge({
+  environment,
+}: {
+  environment: "sandbox" | "production";
+}) {
   return (
     <Badge variant={environment === "production" ? "success" : "info"}>
       {environment === "production" ? "Prod" : "Sandbox"}
     </Badge>
   );
 }
-

@@ -60,7 +60,9 @@ export function HitlClient({ applications, initialTasks }: HitlClientProps) {
       <div className="flex items-center justify-between">
         <div>
           <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-bold text-[var(--foreground)]">HITL Queue</h1>
+            <h1 className="text-2xl font-bold text-[var(--foreground)]">
+              HITL Queue
+            </h1>
             {pendingCount > 0 && (
               <Badge variant="warning">{pendingCount} pending</Badge>
             )}
@@ -75,7 +77,10 @@ export function HitlClient({ applications, initialTasks }: HitlClientProps) {
       <div className="card">
         <div className="flex flex-wrap items-center gap-4">
           <div className="flex items-center gap-2">
-            <label htmlFor="app-filter" className="text-sm font-medium text-[var(--foreground-muted)]">
+            <label
+              htmlFor="app-filter"
+              className="text-sm font-medium text-[var(--foreground-muted)]"
+            >
               Application:
             </label>
             <select
@@ -94,7 +99,10 @@ export function HitlClient({ applications, initialTasks }: HitlClientProps) {
           </div>
 
           <div className="flex items-center gap-2">
-            <label htmlFor="status-filter" className="text-sm font-medium text-[var(--foreground-muted)]">
+            <label
+              htmlFor="status-filter"
+              className="text-sm font-medium text-[var(--foreground-muted)]"
+            >
               Status:
             </label>
             <select
@@ -111,7 +119,10 @@ export function HitlClient({ applications, initialTasks }: HitlClientProps) {
           </div>
 
           <div className="flex items-center gap-2">
-            <label htmlFor="risk-filter" className="text-sm font-medium text-[var(--foreground-muted)]">
+            <label
+              htmlFor="risk-filter"
+              className="text-sm font-medium text-[var(--foreground-muted)]"
+            >
               Risk:
             </label>
             <select
@@ -164,7 +175,7 @@ export function HitlClient({ applications, initialTasks }: HitlClientProps) {
         >
           Pending
           {pendingCount > 0 && (
-            <span className="bg-amber-100 text-amber-700 text-xs px-1.5 py-0.5 rounded-full">
+            <span className="bg-[var(--decision-hitl-bg)] text-[var(--decision-hitl-text)] text-xs px-1.5 py-0.5 rounded-full font-semibold">
               {pendingCount}
             </span>
           )}
@@ -222,22 +233,27 @@ export function HitlClient({ applications, initialTasks }: HitlClientProps) {
                     key={task.id}
                     onClick={() => setSelectedTask(task)}
                     className={`hover:bg-[var(--card-hover)] cursor-pointer ${
-                      task.status === "Pending" ? "bg-amber-50/50" : ""
+                      task.status === "Pending" ? "pending-row" : ""
                     }`}
                   >
                     <td className="whitespace-nowrap text-[var(--foreground-muted)]">
                       {formatRelativeTime(task.createdAt)}
                     </td>
-                    <td className="font-medium">{task.applicationName}</td>
-                    <td>
-                      <code className="text-xs bg-slate-100 px-1.5 py-0.5 rounded">
-                        {task.agentAction.userId}
-                      </code>
+                    <td className="font-medium text-[var(--foreground)]">
+                      {task.applicationName}
                     </td>
-                    <td className="font-medium">{task.agentAction.actionType}</td>
-                    <td className="whitespace-nowrap">
+                    <td>
+                      <code>{task.agentAction.userId}</code>
+                    </td>
+                    <td className="font-medium text-[var(--foreground)]">
+                      {task.agentAction.actionType}
+                    </td>
+                    <td className="whitespace-nowrap text-[var(--foreground)]">
                       {task.agentAction.amount
-                        ? formatCurrency(task.agentAction.amount, task.agentAction.currency)
+                        ? formatCurrency(
+                            task.agentAction.amount,
+                            task.agentAction.currency
+                          )
                         : "—"}
                     </td>
                     <td>
@@ -259,7 +275,7 @@ export function HitlClient({ applications, initialTasks }: HitlClientProps) {
         ) : (
           <div className="empty-state py-16">
             <svg
-              className="w-16 h-16 mb-4 text-slate-300"
+              className="w-16 h-16 mb-4 text-[var(--foreground-muted)] opacity-30"
               fill="none"
               viewBox="0 0 24 24"
               strokeWidth={1}
@@ -271,7 +287,9 @@ export function HitlClient({ applications, initialTasks }: HitlClientProps) {
                 d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
               />
             </svg>
-            <p className="text-lg font-medium text-[var(--foreground)]">No tasks found</p>
+            <p className="text-lg font-medium text-[var(--foreground)]">
+              No tasks found
+            </p>
             <p className="text-sm text-[var(--foreground-muted)] mt-1">
               {status === "Pending"
                 ? "All caught up! No pending tasks to review."
@@ -292,4 +310,3 @@ export function HitlClient({ applications, initialTasks }: HitlClientProps) {
     </div>
   );
 }
-

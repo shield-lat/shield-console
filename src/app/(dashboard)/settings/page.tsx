@@ -7,7 +7,9 @@ export default function SettingsPage() {
     <div className="space-y-6">
       {/* Page header */}
       <div>
-        <h1 className="text-2xl font-bold text-[var(--foreground)]">Settings</h1>
+        <h1 className="text-2xl font-bold text-[var(--foreground)]">
+          Settings
+        </h1>
         <p className="text-sm text-[var(--foreground-muted)] mt-1">
           Manage your organization and Shield configuration
         </p>
@@ -16,7 +18,9 @@ export default function SettingsPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Organization settings */}
         <div className="card">
-          <h2 className="text-lg font-semibold text-[var(--foreground)] mb-4">Organization</h2>
+          <h2 className="text-lg font-semibold text-[var(--foreground)] mb-4">
+            Organization
+          </h2>
           <div className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-[var(--foreground-muted)] mb-1">
@@ -36,7 +40,7 @@ export default function SettingsPage() {
               <input
                 type="text"
                 defaultValue="org_acme_financial"
-                className="input bg-slate-50"
+                className="input bg-[var(--background-alt)]"
                 disabled
               />
             </div>
@@ -58,7 +62,9 @@ export default function SettingsPage() {
 
         {/* API Keys */}
         <div className="card">
-          <h2 className="text-lg font-semibold text-[var(--foreground)] mb-4">API Keys</h2>
+          <h2 className="text-lg font-semibold text-[var(--foreground)] mb-4">
+            API Keys
+          </h2>
           <div className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-[var(--foreground-muted)] mb-1">
@@ -96,7 +102,13 @@ export default function SettingsPage() {
               </div>
             </div>
             <button type="button" className="btn btn-danger" disabled>
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+              <svg
+                className="w-4 h-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                strokeWidth={1.5}
+                stroke="currentColor"
+              >
                 <path
                   strokeLinecap="round"
                   strokeLinejoin="round"
@@ -110,71 +122,95 @@ export default function SettingsPage() {
 
         {/* Policy Configuration */}
         <div className="card lg:col-span-2">
-          <h2 className="text-lg font-semibold text-[var(--foreground)] mb-4">Policy Configuration</h2>
+          <h2 className="text-lg font-semibold text-[var(--foreground)] mb-4">
+            Policy Configuration
+          </h2>
           <p className="text-sm text-[var(--foreground-muted)] mb-6">
             Current thresholds and limits configured for your Shield instance.
             Contact support to modify these settings.
           </p>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <div className="p-4 bg-slate-50 rounded-lg border border-[var(--card-border)]">
+            <div className="p-4 bg-[var(--background-alt)] rounded-lg border border-[var(--card-border)]">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-medium text-[var(--foreground)]">Auto-Allow Threshold</span>
+                <span className="text-sm font-medium text-[var(--foreground)]">
+                  Auto-Allow Threshold
+                </span>
                 <span className="badge badge-risk-low">Active</span>
               </div>
-              <p className="text-2xl font-bold text-[var(--foreground)]">$5,000</p>
+              <p className="text-2xl font-bold text-[var(--foreground)]">
+                $5,000
+              </p>
               <p className="text-xs text-[var(--foreground-muted)] mt-1">
                 Transactions below this amount are auto-approved
               </p>
             </div>
 
-            <div className="p-4 bg-slate-50 rounded-lg border border-[var(--card-border)]">
+            <div className="p-4 bg-[var(--background-alt)] rounded-lg border border-[var(--card-border)]">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-medium text-[var(--foreground)]">HITL Threshold</span>
+                <span className="text-sm font-medium text-[var(--foreground)]">
+                  HITL Threshold
+                </span>
                 <span className="badge badge-risk-medium">Active</span>
               </div>
-              <p className="text-2xl font-bold text-[var(--foreground)]">$50,000</p>
+              <p className="text-2xl font-bold text-[var(--foreground)]">
+                $50,000
+              </p>
               <p className="text-xs text-[var(--foreground-muted)] mt-1">
                 Transactions above this require human review
               </p>
             </div>
 
-            <div className="p-4 bg-slate-50 rounded-lg border border-[var(--card-border)]">
+            <div className="p-4 bg-[var(--background-alt)] rounded-lg border border-[var(--card-border)]">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-medium text-[var(--foreground)]">Hard Block Threshold</span>
+                <span className="text-sm font-medium text-[var(--foreground)]">
+                  Hard Block Threshold
+                </span>
                 <span className="badge badge-risk-critical">Active</span>
               </div>
-              <p className="text-2xl font-bold text-[var(--foreground)]">$500,000</p>
+              <p className="text-2xl font-bold text-[var(--foreground)]">
+                $500,000
+              </p>
               <p className="text-xs text-[var(--foreground-muted)] mt-1">
                 Transactions above this are automatically blocked
               </p>
             </div>
 
-            <div className="p-4 bg-slate-50 rounded-lg border border-[var(--card-border)]">
+            <div className="p-4 bg-[var(--background-alt)] rounded-lg border border-[var(--card-border)]">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-medium text-[var(--foreground)]">Velocity Limit</span>
+                <span className="text-sm font-medium text-[var(--foreground)]">
+                  Velocity Limit
+                </span>
                 <span className="badge badge-risk-medium">Active</span>
               </div>
-              <p className="text-2xl font-bold text-[var(--foreground)]">10 / hour</p>
+              <p className="text-2xl font-bold text-[var(--foreground)]">
+                10 / hour
+              </p>
               <p className="text-xs text-[var(--foreground-muted)] mt-1">
                 Max transfers per user per hour
               </p>
             </div>
 
-            <div className="p-4 bg-slate-50 rounded-lg border border-[var(--card-border)]">
+            <div className="p-4 bg-[var(--background-alt)] rounded-lg border border-[var(--card-border)]">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-medium text-[var(--foreground)]">Prompt Injection Detection</span>
+                <span className="text-sm font-medium text-[var(--foreground)]">
+                  Prompt Injection Detection
+                </span>
                 <span className="badge badge-risk-low">Enabled</span>
               </div>
-              <p className="text-2xl font-bold text-[var(--foreground)]">Strict</p>
+              <p className="text-2xl font-bold text-[var(--foreground)]">
+                Strict
+              </p>
               <p className="text-xs text-[var(--foreground-muted)] mt-1">
                 Aggressive detection of injection attempts
               </p>
             </div>
 
-            <div className="p-4 bg-slate-50 rounded-lg border border-[var(--card-border)]">
+            <div className="p-4 bg-[var(--background-alt)] rounded-lg border border-[var(--card-border)]">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-medium text-[var(--foreground)]">Misalignment Check</span>
+                <span className="text-sm font-medium text-[var(--foreground)]">
+                  Misalignment Check
+                </span>
                 <span className="badge badge-risk-low">Enabled</span>
               </div>
               <p className="text-2xl font-bold text-[var(--foreground)]">On</p>
@@ -187,11 +223,15 @@ export default function SettingsPage() {
 
         {/* Notifications */}
         <div className="card">
-          <h2 className="text-lg font-semibold text-[var(--foreground)] mb-4">Notifications</h2>
+          <h2 className="text-lg font-semibold text-[var(--foreground)] mb-4">
+            Notifications
+          </h2>
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-[var(--foreground)]">Email Alerts</p>
+                <p className="text-sm font-medium text-[var(--foreground)]">
+                  Email Alerts
+                </p>
                 <p className="text-xs text-[var(--foreground-muted)]">
                   Receive alerts for critical events
                 </p>
@@ -206,14 +246,16 @@ export default function SettingsPage() {
             </div>
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-[var(--foreground)]">Slack Integration</p>
+                <p className="text-sm font-medium text-[var(--foreground)]">
+                  Slack Integration
+                </p>
                 <p className="text-xs text-[var(--foreground-muted)]">
                   Post HITL tasks to Slack channel
                 </p>
               </div>
               <button
                 type="button"
-                className="relative w-11 h-6 bg-slate-200 rounded-full transition-colors"
+                className="relative w-11 h-6 bg-[var(--card-border)] rounded-full transition-colors"
                 disabled
               >
                 <span className="absolute left-1 top-1 w-4 h-4 bg-white rounded-full shadow-sm" />
@@ -221,7 +263,9 @@ export default function SettingsPage() {
             </div>
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-[var(--foreground)]">Webhook Callbacks</p>
+                <p className="text-sm font-medium text-[var(--foreground)]">
+                  Webhook Callbacks
+                </p>
                 <p className="text-xs text-[var(--foreground-muted)]">
                   Send events to your webhook endpoint
                 </p>
@@ -238,12 +282,16 @@ export default function SettingsPage() {
         </div>
 
         {/* Danger zone */}
-        <div className="card border-red-200 bg-red-50/30">
-          <h2 className="text-lg font-semibold text-red-700 mb-4">Danger Zone</h2>
+        <div className="card border-[var(--risk-critical-bg)] bg-[var(--risk-critical-bg)]">
+          <h2 className="text-lg font-semibold text-[var(--risk-critical)] mb-4">
+            Danger Zone
+          </h2>
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-[var(--foreground)]">Disable Shield</p>
+                <p className="text-sm font-medium text-[var(--foreground)]">
+                  Disable Shield
+                </p>
                 <p className="text-xs text-[var(--foreground-muted)]">
                   Temporarily disable Shield protection (not recommended)
                 </p>
@@ -254,7 +302,9 @@ export default function SettingsPage() {
             </div>
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-[var(--foreground)]">Delete Organization</p>
+                <p className="text-sm font-medium text-[var(--foreground)]">
+                  Delete Organization
+                </p>
                 <p className="text-xs text-[var(--foreground-muted)]">
                   Permanently delete all data and settings
                 </p>
@@ -269,4 +319,3 @@ export default function SettingsPage() {
     </div>
   );
 }
-

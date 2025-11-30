@@ -21,7 +21,9 @@ export function ActionDetailDrawer({ action, onClose }: ActionDetailDrawerProps)
           {/* Header */}
           <div className="flex items-start justify-between mb-6">
             <div>
-              <h2 className="text-xl font-semibold text-[var(--foreground)]">Action Details</h2>
+              <h2 className="text-xl font-semibold text-[var(--foreground)]">
+                Action Details
+              </h2>
               <p className="text-sm text-[var(--foreground-muted)] mt-1">
                 {formatDateTime(action.createdAt)}
               </p>
@@ -29,10 +31,20 @@ export function ActionDetailDrawer({ action, onClose }: ActionDetailDrawerProps)
             <button
               type="button"
               onClick={onClose}
-              className="p-2 hover:bg-[var(--background-alt)] rounded-lg"
+              className="p-2 hover:bg-[var(--background-alt)] rounded-lg text-[var(--foreground-muted)] hover:text-[var(--foreground)]"
             >
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              <svg
+                className="w-5 h-5"
+                fill="none"
+                viewBox="0 0 24 24"
+                strokeWidth={1.5}
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M6 18L18 6M6 6l12 12"
+                />
               </svg>
             </button>
           </div>
@@ -47,32 +59,50 @@ export function ActionDetailDrawer({ action, onClose }: ActionDetailDrawerProps)
           <div className="space-y-6">
             {/* Basic info */}
             <section>
-              <h3 className="text-sm font-medium text-[var(--foreground-muted)] mb-3">Basic Information</h3>
-              <dl className="space-y-2">
-                <div className="flex justify-between py-2 border-b border-[var(--card-border)]">
-                  <dt className="text-sm text-[var(--foreground-muted)]">Action Type</dt>
-                  <dd className="text-sm font-medium">{action.actionType}</dd>
+              <h3 className="text-sm font-medium text-[var(--foreground-muted)] mb-3">
+                Basic Information
+              </h3>
+              <dl className="space-y-0">
+                <div className="flex justify-between py-3 border-b border-[var(--card-border)]">
+                  <dt className="text-sm text-[var(--foreground-muted)]">
+                    Action Type
+                  </dt>
+                  <dd className="text-sm font-medium text-[var(--foreground)]">
+                    {action.actionType}
+                  </dd>
                 </div>
-                <div className="flex justify-between py-2 border-b border-[var(--card-border)]">
-                  <dt className="text-sm text-[var(--foreground-muted)]">Application</dt>
-                  <dd className="text-sm font-medium">{action.applicationName}</dd>
+                <div className="flex justify-between py-3 border-b border-[var(--card-border)]">
+                  <dt className="text-sm text-[var(--foreground-muted)]">
+                    Application
+                  </dt>
+                  <dd className="text-sm font-medium text-[var(--foreground)]">
+                    {action.applicationName}
+                  </dd>
                 </div>
-                <div className="flex justify-between py-2 border-b border-[var(--card-border)]">
-                  <dt className="text-sm text-[var(--foreground-muted)]">User ID</dt>
+                <div className="flex justify-between py-3 border-b border-[var(--card-border)]">
+                  <dt className="text-sm text-[var(--foreground-muted)]">
+                    User ID
+                  </dt>
                   <dd className="text-sm">
-                    <code className="bg-slate-100 px-1.5 py-0.5 rounded">{action.userId}</code>
+                    <code>{action.userId}</code>
                   </dd>
                 </div>
                 {action.amount && (
-                  <div className="flex justify-between py-2 border-b border-[var(--card-border)]">
-                    <dt className="text-sm text-[var(--foreground-muted)]">Amount</dt>
-                    <dd className="text-sm font-medium">{formatCurrency(action.amount, action.currency)}</dd>
+                  <div className="flex justify-between py-3 border-b border-[var(--card-border)]">
+                    <dt className="text-sm text-[var(--foreground-muted)]">
+                      Amount
+                    </dt>
+                    <dd className="text-sm font-semibold text-[var(--foreground)]">
+                      {formatCurrency(action.amount, action.currency)}
+                    </dd>
                   </div>
                 )}
-                <div className="flex justify-between py-2 border-b border-[var(--card-border)]">
-                  <dt className="text-sm text-[var(--foreground-muted)]">Trace ID</dt>
+                <div className="flex justify-between py-3 border-b border-[var(--card-border)]">
+                  <dt className="text-sm text-[var(--foreground-muted)]">
+                    Trace ID
+                  </dt>
                   <dd className="text-sm">
-                    <code className="bg-slate-100 px-1.5 py-0.5 rounded text-xs">{action.traceId}</code>
+                    <code className="text-xs">{action.traceId}</code>
                   </dd>
                 </div>
               </dl>
@@ -80,25 +110,41 @@ export function ActionDetailDrawer({ action, onClose }: ActionDetailDrawerProps)
 
             {/* Original intent */}
             <section>
-              <h3 className="text-sm font-medium text-[var(--foreground-muted)] mb-3">Original Intent</h3>
-              <div className="bg-slate-50 border border-[var(--card-border)] rounded-lg p-4">
-                <p className="text-sm text-[var(--foreground)] italic">"{action.originalIntent}"</p>
+              <h3 className="text-sm font-medium text-[var(--foreground-muted)] mb-3">
+                Original Intent
+              </h3>
+              <div className="bg-[var(--background-alt)] border border-[var(--card-border)] rounded-lg p-4">
+                <p className="text-sm text-[var(--foreground)] italic leading-relaxed">
+                  "{action.originalIntent}"
+                </p>
               </div>
             </section>
 
             {/* Rule hits / Reasons */}
             <section>
-              <h3 className="text-sm font-medium text-[var(--foreground-muted)] mb-3">Rule Hits & Signals</h3>
+              <h3 className="text-sm font-medium text-[var(--foreground-muted)] mb-3">
+                Rule Hits & Signals
+              </h3>
               <div className="space-y-2">
                 {action.reasons.map((reason, i) => (
                   <div
                     key={i}
-                    className="flex items-center gap-2 text-sm bg-amber-50 border border-amber-200 rounded-lg px-3 py-2"
+                    className="flex items-center gap-3 text-sm bg-[var(--risk-medium-bg)] border border-[var(--risk-medium)] border-opacity-30 rounded-lg px-3 py-2.5"
                   >
-                    <svg className="w-4 h-4 text-amber-600 flex-shrink-0" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+                    <svg
+                      className="w-4 h-4 text-[var(--risk-medium)] flex-shrink-0"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      strokeWidth={1.5}
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"
+                      />
                     </svg>
-                    <span>{reason}</span>
+                    <span className="text-[var(--risk-medium-text)]">{reason}</span>
                   </div>
                 ))}
               </div>
@@ -109,11 +155,11 @@ export function ActionDetailDrawer({ action, onClose }: ActionDetailDrawerProps)
               <h3 className="text-sm font-medium text-[var(--foreground-muted)] mb-3">
                 Chain of Thought (Shield Reasoning)
               </h3>
-              <div className="bg-slate-900 text-slate-100 rounded-lg p-4 font-mono text-xs overflow-x-auto">
-                <pre className="whitespace-pre-wrap">
-{`[Shield Analysis]
+              <div className="code-block rounded-lg p-4 overflow-x-auto">
+                <pre className="whitespace-pre-wrap text-xs">
+                  {`[Shield Analysis]
 ├─ Action: ${action.actionType}
-├─ Amount: ${action.amount ? formatCurrency(action.amount) : 'N/A'}
+├─ Amount: ${action.amount ? formatCurrency(action.amount) : "N/A"}
 ├─ Risk Assessment:
 │   ├─ Base risk score: 0.${action.riskTier === "Low" ? "15" : action.riskTier === "Medium" ? "45" : action.riskTier === "High" ? "72" : "91"}
 │   ├─ User history factor: 1.0
@@ -130,9 +176,11 @@ export function ActionDetailDrawer({ action, onClose }: ActionDetailDrawerProps)
 
             {/* Raw payload */}
             <section>
-              <h3 className="text-sm font-medium text-[var(--foreground-muted)] mb-3">Full Payload (JSON)</h3>
-              <div className="bg-slate-900 text-slate-100 rounded-lg p-4 font-mono text-xs overflow-x-auto max-h-48">
-                <pre>{JSON.stringify(action, null, 2)}</pre>
+              <h3 className="text-sm font-medium text-[var(--foreground-muted)] mb-3">
+                Full Payload (JSON)
+              </h3>
+              <div className="code-block rounded-lg p-4 overflow-x-auto max-h-48">
+                <pre className="text-xs">{JSON.stringify(action, null, 2)}</pre>
               </div>
             </section>
           </div>
@@ -141,4 +189,3 @@ export function ActionDetailDrawer({ action, onClose }: ActionDetailDrawerProps)
     </>
   );
 }
-

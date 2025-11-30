@@ -1,7 +1,8 @@
 "use client";
 
 import { useGlobalFilters } from "@/lib/hooks/useGlobalFilters";
-import type { Environment, TimeRangePreset } from "@/lib/types";
+import { ThemeToggle } from "@/components/common/ThemeToggle";
+import type { TimeRangePreset } from "@/lib/types";
 
 const timeRangeOptions: { value: TimeRangePreset; label: string }[] = [
   { value: "24h", label: "Last 24 hours" },
@@ -14,7 +15,7 @@ export function Topbar() {
   const { filters, setEnvironment, setTimeRange } = useGlobalFilters();
 
   return (
-    <header className="h-16 bg-white border-b border-[var(--card-border)] flex items-center justify-between px-6">
+    <header className="h-16 bg-[var(--card)] border-b border-[var(--card-border)] flex items-center justify-between px-6">
       {/* Left: Page context (will be filled by pages) */}
       <div className="flex items-center gap-4">
         {/* Time range selector */}
@@ -31,7 +32,7 @@ export function Topbar() {
         </select>
       </div>
 
-      {/* Right: Environment toggle + User menu */}
+      {/* Right: Environment toggle + Theme + User menu */}
       <div className="flex items-center gap-4">
         {/* Environment toggle */}
         <div className="flex items-center bg-[var(--background-alt)] rounded-lg p-1">
@@ -42,7 +43,7 @@ export function Topbar() {
               px-3 py-1.5 text-sm font-medium rounded-md transition-colors
               ${
                 filters.environment === "sandbox"
-                  ? "bg-white text-[var(--foreground)] shadow-sm"
+                  ? "bg-[var(--card)] text-[var(--foreground)] shadow-sm"
                   : "text-[var(--foreground-muted)] hover:text-[var(--foreground)]"
               }
             `}
@@ -56,7 +57,7 @@ export function Topbar() {
               px-3 py-1.5 text-sm font-medium rounded-md transition-colors
               ${
                 filters.environment === "production"
-                  ? "bg-white text-[var(--foreground)] shadow-sm"
+                  ? "bg-[var(--card)] text-[var(--foreground)] shadow-sm"
                   : "text-[var(--foreground-muted)] hover:text-[var(--foreground)]"
               }
             `}
@@ -65,12 +66,21 @@ export function Topbar() {
           </button>
         </div>
 
+        {/* Theme toggle */}
+        <ThemeToggle />
+
         {/* Notifications placeholder */}
         <button
           type="button"
           className="relative p-2 text-[var(--foreground-muted)] hover:text-[var(--foreground)] hover:bg-[var(--background-alt)] rounded-lg"
         >
-          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+          <svg
+            className="w-5 h-5"
+            fill="none"
+            viewBox="0 0 24 24"
+            strokeWidth={1.5}
+            stroke="currentColor"
+          >
             <path
               strokeLinecap="round"
               strokeLinejoin="round"
@@ -83,7 +93,9 @@ export function Topbar() {
         {/* User menu */}
         <div className="flex items-center gap-3 pl-4 border-l border-[var(--card-border)]">
           <div className="text-right hidden sm:block">
-            <p className="text-sm font-medium text-[var(--foreground)]">Bregy Malpartida</p>
+            <p className="text-sm font-medium text-[var(--foreground)]">
+              Bregy Malpartida
+            </p>
             <p className="text-xs text-[var(--foreground-muted)]">Admin</p>
           </div>
           <button
@@ -97,4 +109,3 @@ export function Topbar() {
     </header>
   );
 }
-

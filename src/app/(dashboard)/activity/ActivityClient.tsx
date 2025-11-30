@@ -4,16 +4,26 @@ import { useEffect, useState } from "react";
 import { DecisionBadge, RiskBadge } from "@/components/common/Badge";
 import { ActionDetailDrawer } from "@/components/drawers/ActionDetailDrawer";
 import { getActivityLog, formatCurrency, formatDateTime } from "@/lib/api";
-import type { AgentAction, Application, Decision, RiskTier } from "@/lib/types";
+import type {
+  AgentAction,
+  Application,
+  Decision,
+  RiskTier,
+} from "@/lib/types";
 
 interface ActivityClientProps {
   applications: Application[];
   initialActions: AgentAction[];
 }
 
-export function ActivityClient({ applications, initialActions }: ActivityClientProps) {
+export function ActivityClient({
+  applications,
+  initialActions,
+}: ActivityClientProps) {
   const [actions, setActions] = useState(initialActions);
-  const [selectedAction, setSelectedAction] = useState<AgentAction | null>(null);
+  const [selectedAction, setSelectedAction] = useState<AgentAction | null>(
+    null
+  );
   const [isLoading, setIsLoading] = useState(false);
 
   // Filters
@@ -46,13 +56,21 @@ export function ActivityClient({ applications, initialActions }: ActivityClientP
       {/* Page header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-[var(--foreground)]">Activity Log</h1>
+          <h1 className="text-2xl font-bold text-[var(--foreground)]">
+            Activity Log
+          </h1>
           <p className="text-sm text-[var(--foreground-muted)] mt-1">
             Complete audit history of all Shield decisions
           </p>
         </div>
         <button type="button" className="btn btn-secondary" disabled>
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+          <svg
+            className="w-4 h-4"
+            fill="none"
+            viewBox="0 0 24 24"
+            strokeWidth={1.5}
+            stroke="currentColor"
+          >
             <path
               strokeLinecap="round"
               strokeLinejoin="round"
@@ -67,7 +85,10 @@ export function ActivityClient({ applications, initialActions }: ActivityClientP
       <div className="card">
         <div className="flex flex-wrap items-center gap-4">
           <div className="flex items-center gap-2">
-            <label htmlFor="app-filter" className="text-sm font-medium text-[var(--foreground-muted)]">
+            <label
+              htmlFor="app-filter"
+              className="text-sm font-medium text-[var(--foreground-muted)]"
+            >
               Application:
             </label>
             <select
@@ -86,7 +107,10 @@ export function ActivityClient({ applications, initialActions }: ActivityClientP
           </div>
 
           <div className="flex items-center gap-2">
-            <label htmlFor="decision-filter" className="text-sm font-medium text-[var(--foreground-muted)]">
+            <label
+              htmlFor="decision-filter"
+              className="text-sm font-medium text-[var(--foreground-muted)]"
+            >
               Decision:
             </label>
             <select
@@ -103,7 +127,10 @@ export function ActivityClient({ applications, initialActions }: ActivityClientP
           </div>
 
           <div className="flex items-center gap-2">
-            <label htmlFor="risk-filter" className="text-sm font-medium text-[var(--foreground-muted)]">
+            <label
+              htmlFor="risk-filter"
+              className="text-sm font-medium text-[var(--foreground-muted)]"
+            >
               Risk:
             </label>
             <select
@@ -165,15 +192,19 @@ export function ActivityClient({ applications, initialActions }: ActivityClientP
                     <td className="whitespace-nowrap text-[var(--foreground-muted)]">
                       {formatDateTime(action.createdAt)}
                     </td>
-                    <td className="font-medium">{action.applicationName}</td>
-                    <td>
-                      <code className="text-xs bg-slate-100 px-1.5 py-0.5 rounded">
-                        {action.userId}
-                      </code>
+                    <td className="font-medium text-[var(--foreground)]">
+                      {action.applicationName}
                     </td>
-                    <td className="font-medium">{action.actionType}</td>
-                    <td className="whitespace-nowrap">
-                      {action.amount ? formatCurrency(action.amount, action.currency) : "—"}
+                    <td>
+                      <code>{action.userId}</code>
+                    </td>
+                    <td className="font-medium text-[var(--foreground)]">
+                      {action.actionType}
+                    </td>
+                    <td className="whitespace-nowrap text-[var(--foreground)]">
+                      {action.amount
+                        ? formatCurrency(action.amount, action.currency)
+                        : "—"}
                     </td>
                     <td>
                       <DecisionBadge decision={action.decision} />
@@ -182,7 +213,7 @@ export function ActivityClient({ applications, initialActions }: ActivityClientP
                       <RiskBadge tier={action.riskTier} />
                     </td>
                     <td>
-                      <code className="text-xs text-[var(--foreground-muted)] bg-slate-100 px-1.5 py-0.5 rounded">
+                      <code className="text-xs">
                         {action.traceId.substring(0, 12)}...
                       </code>
                     </td>
@@ -194,7 +225,7 @@ export function ActivityClient({ applications, initialActions }: ActivityClientP
         ) : (
           <div className="empty-state py-16">
             <svg
-              className="w-16 h-16 mb-4 text-slate-300"
+              className="w-16 h-16 mb-4 text-[var(--foreground-muted)] opacity-30"
               fill="none"
               viewBox="0 0 24 24"
               strokeWidth={1}
@@ -206,7 +237,9 @@ export function ActivityClient({ applications, initialActions }: ActivityClientP
                 d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m5.231 13.481L15 17.25m-4.5-15H5.625c-.621 0-1.125.504-1.125 1.125v16.5c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9zm3.75 11.625a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z"
               />
             </svg>
-            <p className="text-lg font-medium text-[var(--foreground)]">No activity found</p>
+            <p className="text-lg font-medium text-[var(--foreground)]">
+              No activity found
+            </p>
             <p className="text-sm text-[var(--foreground-muted)] mt-1">
               Try adjusting your filters or time range.
             </p>
@@ -239,4 +272,3 @@ export function ActivityClient({ applications, initialActions }: ActivityClientP
     </div>
   );
 }
-
