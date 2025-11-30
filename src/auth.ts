@@ -1,13 +1,15 @@
-import NextAuth from "next-auth";
-import GitHub from "next-auth/providers/github";
-import Google from "next-auth/providers/google";
-import Credentials from "next-auth/providers/credentials";
 import type { User } from "@/lib/types";
 import type { Account } from "next-auth";
+import NextAuth from "next-auth";
+import Credentials from "next-auth/providers/credentials";
+import GitHub from "next-auth/providers/github";
+import Google from "next-auth/providers/google";
 
 // Shield Core API URL - normalize to base URL without /v1
+// Try multiple environment variable names for flexibility
 function getShieldApiBaseUrl(): string {
-  const envUrl = process.env.NEXT_PUBLIC_SHIELD_API_URL || "";
+  const envUrl =
+    process.env.NEXT_PUBLIC_SHIELD_API_URL || process.env.SHIELD_API_URL || "";
   if (!envUrl) return "";
   // Remove trailing slash and /v1 suffix if present
   return envUrl.replace(/\/+$/, "").replace(/\/v1$/, "");
@@ -16,10 +18,9 @@ function getShieldApiBaseUrl(): string {
 const SHIELD_API_BASE = getShieldApiBaseUrl();
 const USE_SHIELD_API = !!SHIELD_API_BASE;
 
-// Log the configured URL in development
-if (process.env.NODE_ENV === "development" && USE_SHIELD_API) {
-  console.log("[Shield Auth] API Base URL:", SHIELD_API_BASE);
-}
+// Always log the configured URL to help debug production issues
+console.log("[Shield Auth] API Base URL:", SHIELD_API_BASE || "(not set)");
+console.log("[Shield Auth] USE_SHIELD_API:", USE_SHIELD_API);
 
 // Extend the session types
 declare module "next-auth" {
@@ -32,7 +33,12 @@ declare module "next-auth" {
       companyId: string | null;
       role: string;
       accessToken?: string; // Shield Core JWT token
-      companies?: Array<{ id: string; name: string; slug: string; role: string }>;
+      companies?: Array<{
+        id: string;
+        name: string;
+        slug: string;
+        role: string;
+      }>;
     };
   }
 
@@ -120,7 +126,10 @@ async function syncOAuthUserWithShieldCore(
       github: "git_hub", // Shield Core uses git_hub (snake_case)
     };
 
-    console.log("[Shield OAuth Sync] Calling:", `${SHIELD_API_BASE}/v1/auth/oauth/sync`);
+    console.log(
+      "[Shield OAuth Sync] Calling:",
+      `${SHIELD_API_BASE}/v1/auth/oauth/sync`
+    );
     const response = await fetch(`${SHIELD_API_BASE}/v1/auth/oauth/sync`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -321,17 +330,26 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                   ? shieldUser.companies[0].id
                   : null;
 
-              console.log("[Shield Auth] OAuth user synced:", {
+              console.log("[Shield Auth] OAuth user synced successfully:", {
                 id: shieldUser.id,
-                hasCompany: !!token.companyId,
+                hasAccessToken: !!shieldUser.accessToken,
+                companiesCount: shieldUser.companies.length,
                 isNewUser: shieldUser.isNewUser,
               });
             } else {
               // Shield Core sync failed - allow login but no Shield features
-              console.warn("[Shield Auth] OAuth sync failed, using basic session");
+              console.error("[Shield Auth] OAuth sync failed!");
+              console.error(
+                "[Shield Auth] Check Shield Core logs at:",
+                SHIELD_API_BASE
+              );
+              console.error(
+                "[Shield Auth] User will have limited functionality without access token"
+              );
               token.companyId = null;
               token.role = "member";
               token.companies = [];
+              // accessToken remains undefined - this is the problem!
             }
           } else {
             // No Shield API - use mock flow
